@@ -1,7 +1,7 @@
+import { format } from 'date-fns';
+import { appendFile } from 'node:fs/promises';
 import { IKline } from '../types/IKline';
 import { MarketMemory } from './marketMemory';
-import { appendFile } from 'node:fs/promises';
-import { format } from 'date-fns';
 
 const ONE_HOUR = 60 * 60 * 1000;
 

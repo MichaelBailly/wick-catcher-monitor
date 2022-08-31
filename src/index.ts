@@ -1,8 +1,8 @@
+import debug from 'debug';
 import { getUsdtPairs } from './exchanges/binance';
 import { MarketMemoryCollection } from './lib/marketMemory';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
 import { start } from './ws';
-import debug from 'debug';
 
 const marketMemoryCollection = new MarketMemoryCollection();
 const orchestrator = new MarketOrchestrator(marketMemoryCollection);
