@@ -1,7 +1,7 @@
 import { binanceKlineMessageToITick } from '../lib/klinesParser';
 import { MarketOrchestrator } from '../lib/marketOrchestrator';
 import BinanceWebsocketMessage from '../types/BinanceWebSocketMessage';
-import IKline from '../types/IKline.type';
+import IKline from '../types/IKline';
 import SocketClient from './client';
 
 export function start(streamName: string, orchestrator: MarketOrchestrator) {
