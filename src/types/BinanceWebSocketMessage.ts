@@ -1,3 +1,3 @@
 import { BinanceWebSocketKlineMessage } from './BinanceWebSocketKlineMessage';
 
-export type BinanceWebsocketMessage = BinanceWebSocketKlineMessage;
+export type BinanceWebSocketMessage = BinanceWebSocketKlineMessage;

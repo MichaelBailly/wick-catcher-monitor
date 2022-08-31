@@ -61,8 +61,8 @@ async function generateGlobalTypes() {
       relativePath: '../',
       importName: typeName,
       importVarName: {
-        pre: '',
-        post: '',
+        pre: '{',
+        post: '}',
       },
     };
     await genFile(config);
