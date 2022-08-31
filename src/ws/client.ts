@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 import debug from 'debug';
-import BinanceWebSocketKlineMessage from '../types/BinanceWebSocketKlineMessage';
+import { BinanceWebSocketKlineMessage } from '../types/BinanceWebSocketKlineMessage';
 
 const d = debug('ws:client');
 

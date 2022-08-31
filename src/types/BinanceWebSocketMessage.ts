@@ -1,5 +1,3 @@
-import BinanceWebSocketKlineMessage from './BinanceWebSocketKlineMessage';
+import { BinanceWebSocketKlineMessage } from './BinanceWebSocketKlineMessage';
 
-type BinanceWebsocketMessage = BinanceWebSocketKlineMessage;
-
-export default BinanceWebsocketMessage;
+export type BinanceWebsocketMessage = BinanceWebSocketKlineMessage;

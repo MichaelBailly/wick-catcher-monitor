@@ -1,8 +1,6 @@
-import BinanceWebSocketKlineEvent from './BinanceWebSocketKlineEvent';
+import { BinanceWebSocketKlineEvent } from './BinanceWebSocketKlineEvent';
 
-type BinanceWebSocketKlineMessage = {
+export type BinanceWebSocketKlineMessage = {
   stream: string;
   data: BinanceWebSocketKlineEvent;
 };
-
-export default BinanceWebSocketKlineMessage;

@@ -1,4 +1,4 @@
-type BinanceWebSocketKlineEvent = {
+export type BinanceWebSocketKlineEvent = {
   e: 'kline';
   E: number;
   s: string;
@@ -22,5 +22,3 @@ type BinanceWebSocketKlineEvent = {
     B: string;
   };
 };
-
-export default BinanceWebSocketKlineEvent;

@@ -1,5 +1,5 @@
 import { RECORDER_FILE_PATH } from '../config';
-import IKline from '../types/IKline';
+import { IKline } from '../types/IKline';
 import { MarketFlashWickRecorder } from './marketFlashWickRecorder';
 import { MarketMemoryCollection } from './marketMemory';
 

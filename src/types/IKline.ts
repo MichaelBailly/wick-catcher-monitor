@@ -1,4 +1,4 @@
-type IKline = {
+export type IKline = {
   interval: string;
   start: number;
   end: number;
@@ -8,5 +8,3 @@ type IKline = {
   low: number;
   volume: number;
 };
-
-export default IKline;

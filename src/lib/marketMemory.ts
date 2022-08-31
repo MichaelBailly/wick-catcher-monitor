@@ -1,6 +1,6 @@
 import { sub } from 'date-fns';
 import debug, { Debugger } from 'debug';
-import IKline from '../types/IKline';
+import { IKline } from '../types/IKline';
 
 export class MarketMemory {
   pair: string;

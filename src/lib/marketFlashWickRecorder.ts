@@ -1,4 +1,4 @@
-import IKline from '../types/IKline';
+import { IKline } from '../types/IKline';
 import { MarketMemory } from './marketMemory';
 import { appendFile } from 'node:fs/promises';
 import { format } from 'date-fns';

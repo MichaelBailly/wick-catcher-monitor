@@ -1,4 +1,4 @@
-import BinanceWebSocketKlineMessage from '../types/BinanceWebSocketKlineMessage';
+import { BinanceWebSocketKlineMessage } from '../types/BinanceWebSocketKlineMessage';
 
 export function binanceKlineMessageToITick(
   message: BinanceWebSocketKlineMessage
