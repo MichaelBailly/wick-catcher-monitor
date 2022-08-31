@@ -3,7 +3,7 @@ import { binanceKlineMessageToITick } from './lib/klinesParser';
 import { MarketMemoryCollection } from './lib/marketMemory';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
 import BinanceWebsocketMessage from './types/BinanceWebSocketMessage';
-import IKline from './types/IKline.type';
+import IKline from './types/IKline';
 import { start } from './ws';
 import SocketClient from './ws/client';
 import debug from 'debug';
