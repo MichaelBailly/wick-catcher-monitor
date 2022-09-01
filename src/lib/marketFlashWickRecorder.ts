@@ -13,6 +13,8 @@ export class MarketFlashWickRecorder {
   klineRecords: IKline[] = [];
   close: () => void;
   fileName: string;
+  marketMemoryConfLine: string;
+
   constructor(
     private marketMemory: MarketMemory,
     closeCallback: () => void,
@@ -23,9 +25,10 @@ export class MarketFlashWickRecorder {
     this.history = marketMemory.getHistory();
     this.recordLength = opts?.recordLength || ONE_HOUR;
     this.recordUntil = Date.now() + this.recordLength;
+    this.marketMemoryConfLine = marketMemory.getConfLine();
 
     const filePath = opts?.filePath || `/tmp`;
-    this.fileName = `${filePath}/${this.pair}-${format(
+    this.fileName = `${filePath}/${this.marketMemoryConfLine}-${format(
       new Date(),
       'yyyyMMdd-HHmm'
     )}.json`;

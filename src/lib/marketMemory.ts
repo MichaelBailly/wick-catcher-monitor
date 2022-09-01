@@ -97,32 +97,8 @@ export class MarketMemory {
   getHistory() {
     return this.minutes.map((m) => ({ ...m }));
   }
-}
 
-export class MarketMemoryCollection {
-  private marketMemories: Map<string, MarketMemory> = new Map();
-  private marketMemoryOpts = {
-    flashWickRatio: 1.1,
-  };
-
-  constructor(opts?: { flashWickRatio?: number }) {
-    if (opts?.flashWickRatio) {
-      this.marketMemoryOpts.flashWickRatio = opts.flashWickRatio;
-    }
-  }
-
-  get(pair: string): MarketMemory {
-    if (!this.marketMemories.has(pair)) {
-      this.marketMemories.set(
-        pair,
-        new MarketMemory(pair, { ...this.marketMemoryOpts })
-      );
-    }
-    const marketMemory = this.marketMemories.get(pair);
-    // to satisfy TS...
-    if (marketMemory === undefined) {
-      throw new Error('MarketMemoryCollection.get() returned undefined');
-    }
-    return marketMemory;
+  getConfLine() {
+    return `${this.pair}-${this.flashWickRatio}-${this.historySize}`;
   }
 }

@@ -1,13 +1,17 @@
 import debug from 'debug';
 import { getUsdtPairs } from './exchanges/binance';
-import { MarketMemoryCollection } from './lib/marketMemory';
+import { MarketMemoryCollection } from './lib/marketMemoryCollection';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
 import { start } from './ws';
 
 const orchestrators: MarketOrchestrator[] = [];
 
-const marketMemoryCollection = new MarketMemoryCollection();
-const orchestrator = new MarketOrchestrator(marketMemoryCollection);
+const marketMemoryCollections = [];
+marketMemoryCollections.push(new MarketMemoryCollection());
+marketMemoryCollections.push(
+  new MarketMemoryCollection({ flashWickRatio: 1.075 })
+);
+const orchestrator = new MarketOrchestrator(marketMemoryCollections);
 
 orchestrators.push(orchestrator);
 // const streamName = 'stream?streams=maticusdt@kline_1m/dotusdt@kline_1m';

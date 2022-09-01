@@ -1,17 +1,17 @@
 import { RECORDER_FILE_PATH } from '../config';
 import { IKline } from '../types/IKline';
 import { MarketFlashWickRecorder } from './marketFlashWickRecorder';
-import { MarketMemoryCollection } from './marketMemory';
+import { MarketMemoryCollection } from './marketMemoryCollection';
 
 const ALIVE_TTL = 30 * 60 * 1000;
 
 export class MarketOrchestrator {
-  collection: MarketMemoryCollection;
+  collections: MarketMemoryCollection[];
   aliveCount: number;
   aliveTimestamp: number;
   recorders: Map<string, MarketFlashWickRecorder> = new Map();
-  constructor(private marketMemoryCollection: MarketMemoryCollection) {
-    this.collection = marketMemoryCollection;
+  constructor(private marketMemoryCollections: MarketMemoryCollection[]) {
+    this.collections = marketMemoryCollections;
     this.aliveCount = 0;
     this.aliveTimestamp = Date.now() + ALIVE_TTL;
   }
@@ -23,22 +23,24 @@ export class MarketOrchestrator {
   }
 
   marketMemoryHook(pair: string, msg: IKline) {
-    const marketMemory = this.collection.get(pair);
-    marketMemory.onKlineMessage(msg);
-    if (marketMemory.detectFlashWick()) {
-      console.log('Flash wick detected on ', marketMemory.pair, new Date());
-      const recorder = this.recorders.get(pair);
-      if (!recorder) {
-        this.recorders.set(
-          pair,
-          new MarketFlashWickRecorder(
-            marketMemory,
-            () => {
-              this.recorders.delete(pair);
-            },
-            { filePath: RECORDER_FILE_PATH }
-          )
-        );
+    for (const collection of this.collections) {
+      const marketMemory = collection.get(pair);
+      marketMemory.onKlineMessage(msg);
+      if (marketMemory.detectFlashWick()) {
+        console.log('Flash wick detected on ', marketMemory.pair, new Date());
+        const recorder = this.recorders.get(pair);
+        if (!recorder) {
+          this.recorders.set(
+            pair,
+            new MarketFlashWickRecorder(
+              marketMemory,
+              () => {
+                this.recorders.delete(pair);
+              },
+              { filePath: RECORDER_FILE_PATH }
+            )
+          );
+        }
       }
     }
   }
