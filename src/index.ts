@@ -4,9 +4,12 @@ import { MarketMemoryCollection } from './lib/marketMemory';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
 import { start } from './ws';
 
+const orchestrators: MarketOrchestrator[] = [];
+
 const marketMemoryCollection = new MarketMemoryCollection();
 const orchestrator = new MarketOrchestrator(marketMemoryCollection);
 
+orchestrators.push(orchestrator);
 // const streamName = 'stream?streams=maticusdt@kline_1m/dotusdt@kline_1m';
 
 const d = debug('index');
@@ -16,7 +19,7 @@ async function run() {
   d('%d pairs', pairs.length);
   const streams = pairs.map((pair) => `${pair.toLowerCase()}@kline_1m`);
   const streamName = `stream?streams=${streams.join('/')}`;
-  start(streamName, orchestrator);
+  start(streamName, orchestrators);
 }
 
 run();
