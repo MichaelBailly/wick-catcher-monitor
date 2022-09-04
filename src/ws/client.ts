@@ -17,6 +17,7 @@ class SocketClient {
   }
 
   start() {
+    const ws = this._ws;
     this._ws = new WebSocket(`${this.baseUrl}${this._path}`);
 
     this._ws.onopen = () => {
@@ -33,11 +34,21 @@ class SocketClient {
 
     this._ws.onclose = () => {
       d('ws closed');
+      if (ws === this._ws) {
+        this.start();
+      }
     };
 
     this._ws.onerror = (err) => {
-      d('ws error', err);
-      this.start();
+      d('ws error %o', err);
+      if (ws === this._ws) {
+        try {
+          this._ws && this._ws.close();
+        } catch (e) {
+          d('ws close error %o', e);
+        }
+        this.start();
+      }
     };
 
     this._ws.onmessage = (msg: any) => {
@@ -71,7 +82,6 @@ class SocketClient {
     setInterval(() => {
       if (this._ws && this._ws.readyState === WebSocket.OPEN) {
         this._ws.ping();
-        //        d('ping server');
       }
     }, 50000);
   }
