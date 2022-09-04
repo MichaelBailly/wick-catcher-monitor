@@ -1,3 +1,4 @@
+import debug from 'debug';
 import { BuyTradeInfo } from '../types/BuyTradeInfo';
 import { IKline } from '../types/IKline';
 import { MarketMemory } from './marketMemory';
@@ -28,6 +29,10 @@ export class TradeDriver {
     low: 0,
   };
   soldCallback: (trade: BuyTradeInfo, amount: number, price: number) => void;
+  info: debug.Debugger;
+  debug: debug.Debugger;
+  error: debug.Debugger;
+  sellTimeoutId: NodeJS.Timeout | null = null;
   constructor(
     marketMemory: MarketMemory,
     onSold: (trade: BuyTradeInfo, amount: number, price: number) => void,
@@ -45,6 +50,9 @@ export class TradeDriver {
     this.stopLossRatio = opts?.stopLossRatio || 0.98;
     this.trailingLimitRatio = opts?.trailingLimitRatio || 0.85;
     this.lastKline = this.history[0];
+    this.info = debug(`tradeDriver:${this.pair}:info`);
+    this.debug = debug(`tradeDriver:${this.pair}:debug`);
+    this.error = debug(`tradeDriver:${this.pair}:error`);
   }
 
   start() {
@@ -59,6 +67,7 @@ export class TradeDriver {
       return;
     }
     this.state = TradeState.BUY;
+    this.info('buy');
     setTimeout(() => {
       this.state = TradeState.BOUGHT;
       this.onBought(this.quoteAmount, this.lastKline.close);
@@ -67,7 +76,13 @@ export class TradeDriver {
 
   onBought(quoteAmount: number, price: number) {
     const amount = quoteAmount / price;
-    console.log('Bought', this.pair, amount, quoteAmount, price);
+    this.info(
+      'Bought %s price:%d amount:%d quoteAmount:%d',
+      this.pair,
+      price,
+      amount,
+      quoteAmount
+    );
     this.buyTradeinfo = {
       amount,
       quoteAmount,
@@ -75,6 +90,11 @@ export class TradeDriver {
       timestamp: Date.now(),
       low: price * this.stopLossRatio,
     };
+
+    this.sellTimeoutId = setTimeout(() => {
+      this.info('sell trigger. Reason: timeout');
+      this.sell();
+    }, 1000 * 60 * 60);
   }
 
   sell() {
@@ -82,17 +102,23 @@ export class TradeDriver {
       return;
     }
     this.state = TradeState.SELL;
+    this.info('sell. current price=%d', this.lastKline.close);
     setTimeout(() => {
       this.state = TradeState.SOLD;
       this.onSold(this.buyTradeinfo.amount, this.lastKline.close);
     }, 3000);
+
+    if (this.sellTimeoutId !== null) {
+      clearTimeout(this.sellTimeoutId);
+      this.sellTimeoutId = null;
+    }
   }
 
   onSold(amount: number, price: number) {
     const quoteAmount = amount * price;
-    console.log('Sold', this.pair, amount, quoteAmount, price);
+    this.info('Sold %s %d %d %d', this.pair, price, amount, quoteAmount);
     const pnl = quoteAmount - this.buyTradeinfo.quoteAmount;
-    console.log('trade pnl:', pnl);
+    this.info('trade pnl:', pnl);
     this.soldCallback(this.buyTradeinfo, amount, price);
   }
 
@@ -108,6 +134,7 @@ export class TradeDriver {
     }
 
     if (msg.close < this.buyTradeinfo.low) {
+      this.info('sell trigger. Reason: price below low (stop loss)');
       return this.sell();
     }
 
@@ -121,6 +148,7 @@ export class TradeDriver {
       (msg.close - this.buyTradeinfo.price) / highestPriceRelative <
         this.trailingLimitRatio
     ) {
+      this.info('sell trigger. Reason: price dropped below trailing limit');
       return this.sell();
     }
   }

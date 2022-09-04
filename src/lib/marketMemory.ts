@@ -47,8 +47,6 @@ export class MarketMemory {
         this.minutes[0] = { ...msg };
       }
     }
-
-    this.d('%d minutes', this.minutes.length);
   }
 
   isConcurrentMinutes() {

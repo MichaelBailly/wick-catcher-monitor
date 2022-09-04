@@ -23,6 +23,7 @@ export class MarketOrchestrator {
   }
 
   onKline(pair: string, msg: IKline) {
+    this.tradeDriverHook(pair, msg);
     this.marketMemoryHook(pair, msg);
     this.marketRecorderHook(pair, msg);
     this.aliveHook();
@@ -69,7 +70,7 @@ export class MarketOrchestrator {
             set = new Set<TradeDriver>();
             this.tradeDrivers.set(pair, set);
           }
-          this.tradeDrivers.set(pair, new Set([tradeDriver]));
+          set.add(tradeDriver);
         }
       }
     }

@@ -14,7 +14,6 @@ export function start(streamName: string, orchestrators: MarketOrchestrator[]) {
     const pair = params.data.s;
     const interval = params.stream.split('_').pop() || 'unknown';
     const ikline: IKline = { ...binanceKlineMessageToITick(params), interval };
-    // console.log(params.stream, params.data.e, params.data.s, params.data.k.c);
     orchestrators.forEach((orchestrator) => {
       orchestrator.onKline(pair, ikline);
     });

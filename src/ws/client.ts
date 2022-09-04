@@ -1,8 +1,9 @@
-import WebSocket from 'ws';
 import debug from 'debug';
+import WebSocket from 'ws';
 import { BinanceWebSocketKlineMessage } from '../types/BinanceWebSocketKlineMessage';
 
-const d = debug('ws:client');
+const d = debug('ws:client:info');
+const deb = debug('ws:client:debug');
 
 class SocketClient {
   baseUrl: string;
@@ -22,11 +23,11 @@ class SocketClient {
       d('ws connected');
     };
 
-    this._ws.on('pong', () => {
+    /*    this._ws.on('pong', () => {
       d('receieved pong from server');
-    });
+    });*/
     this._ws.on('ping', () => {
-      d('==========receieved ping from server');
+      //      d('==========receieved ping from server');
       this._ws && this._ws.pong();
     });
 
@@ -40,7 +41,7 @@ class SocketClient {
     };
 
     this._ws.onmessage = (msg: any) => {
-      d('message %O', msg.data);
+      deb('message %O', msg.data);
       try {
         const handlerMessage: BinanceWebSocketKlineMessage = JSON.parse(
           msg.data
@@ -66,15 +67,11 @@ class SocketClient {
     this.heartBeat();
   }
 
-  isMultiStream(message: any) {
-    return message.stream && this._handlers.has(message.stream);
-  }
-
   heartBeat() {
     setInterval(() => {
       if (this._ws && this._ws.readyState === WebSocket.OPEN) {
         this._ws.ping();
-        d('ping server');
+        //        d('ping server');
       }
     }, 50000);
   }
