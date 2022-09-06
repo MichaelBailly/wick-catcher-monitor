@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { appendFile } from 'node:fs/promises';
 import { IKline } from '../types/IKline';
-import { MarketMemory } from './marketMemory';
+import { MarketWatcher } from '../types/MarketWatcher';
 
 const ONE_HOUR = 60 * 60 * 1000;
 
@@ -16,7 +16,7 @@ export class MarketFlashWickRecorder {
   marketMemoryConfLine: string;
 
   constructor(
-    private marketMemory: MarketMemory,
+    private marketMemory: MarketWatcher,
     closeCallback: () => void,
     opts?: { recordLength?: number; filePath?: string }
   ) {

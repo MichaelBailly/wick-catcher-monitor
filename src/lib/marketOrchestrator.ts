@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import debug from 'debug';
 import { writeFile } from 'fs/promises';
 import { RECORDER_FILE_PATH } from '../config';
 import { BuyTradeInfo } from '../types/BuyTradeInfo';
@@ -16,8 +17,10 @@ export class MarketOrchestrator {
   recorders: Map<MarketMemoryCollection, Map<string, MarketFlashWickRecorder>> =
     new Map();
   tradeDrivers: Map<string, Set<TradeDriver>> = new Map();
+  log: debug.Debugger;
   constructor(private marketMemoryCollections: MarketMemoryCollection[]) {
     this.collections = marketMemoryCollections;
+    this.log = debug('marketOrchestrator');
     this.aliveCount = 0;
     this.aliveTimestamp = Date.now() + ALIVE_TTL;
   }
@@ -31,46 +34,52 @@ export class MarketOrchestrator {
 
   marketMemoryHook(pair: string, msg: IKline) {
     for (const collection of this.collections) {
-      const marketMemory = collection.get(pair);
-      marketMemory.onKlineMessage(msg);
-      if (marketMemory.detectFlashWick()) {
-        console.log('Flash wick detected on ', marketMemory.pair, new Date());
-        let collectionRecorders = this.recorders.get(collection);
-        if (!collectionRecorders) {
-          collectionRecorders = new Map<string, MarketFlashWickRecorder>();
-          this.recorders.set(collection, collectionRecorders);
-        }
-        const recorder = collectionRecorders.get(pair);
-        if (!recorder) {
-          collectionRecorders.set(
-            pair,
-            new MarketFlashWickRecorder(
-              marketMemory,
-              () => {
-                collectionRecorders?.delete(pair);
-              },
-              { filePath: RECORDER_FILE_PATH }
-            )
-          );
-
-          const tradeDriver = new TradeDriver(
-            marketMemory,
-            (trade: BuyTradeInfo, amount: number, price: number) => {
-              const tradeDrivers = this.tradeDrivers.get(pair);
-              if (tradeDrivers) {
-                tradeDrivers.delete(tradeDriver);
-                this.recordTradeSummary(tradeDriver, amount, price);
-              }
-            }
-          );
-          tradeDriver.start();
-
-          let set = this.tradeDrivers.get(pair);
-          if (!set) {
-            set = new Set<TradeDriver>();
-            this.tradeDrivers.set(pair, set);
+      const marketMemories = collection.get(pair);
+      for (const marketMemory of marketMemories) {
+        marketMemory.onKlineMessage(msg);
+        if (marketMemory.detectFlashWick()) {
+          this.log('%o flash wick detected on %s', new Date(), pair);
+          let collectionRecorders = this.recorders.get(collection);
+          if (!collectionRecorders) {
+            collectionRecorders = new Map<string, MarketFlashWickRecorder>();
+            this.recorders.set(collection, collectionRecorders);
           }
-          set.add(tradeDriver);
+          const recorder = collectionRecorders.get(pair);
+          if (!recorder) {
+            collectionRecorders.set(
+              pair,
+              new MarketFlashWickRecorder(
+                marketMemory,
+                () => {
+                  collectionRecorders?.delete(pair);
+                },
+                { filePath: RECORDER_FILE_PATH }
+              )
+            );
+
+            const tradeDriver = new TradeDriver(
+              marketMemory,
+              (trade: BuyTradeInfo, amount: number, price: number) => {
+                const tradeDrivers = this.tradeDrivers.get(pair);
+                if (tradeDrivers) {
+                  tradeDrivers.delete(tradeDriver);
+                  this.recordTradeSummary(tradeDriver, amount, price);
+                }
+              },
+              {
+                stopInhibitDelay: 1000 * 60 * 15,
+                sellAfter: 1000 * 60 * 60,
+              }
+            );
+            tradeDriver.start();
+
+            let set = this.tradeDrivers.get(pair);
+            if (!set) {
+              set = new Set<TradeDriver>();
+              this.tradeDrivers.set(pair, set);
+            }
+            set.add(tradeDriver);
+          }
         }
       }
     }
@@ -97,7 +106,7 @@ export class MarketOrchestrator {
   aliveHook() {
     this.aliveCount++;
     if (Date.now() > this.aliveTimestamp) {
-      console.log('Still alive,', this.aliveCount, 'messages processed');
+      this.log('Still alive, %d messages processed', this.aliveCount);
       this.aliveTimestamp = Date.now() + ALIVE_TTL;
       this.aliveCount = 0;
     }

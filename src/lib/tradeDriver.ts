@@ -1,7 +1,7 @@
 import debug from 'debug';
 import { BuyTradeInfo } from '../types/BuyTradeInfo';
 import { IKline } from '../types/IKline';
-import { MarketMemory } from './marketMemory';
+import { MarketWatcher } from '../types/MarketWatcher';
 
 enum TradeState {
   NONE,
@@ -33,13 +33,17 @@ export class TradeDriver {
   debug: debug.Debugger;
   error: debug.Debugger;
   sellTimeoutId: NodeJS.Timeout | null = null;
+  stopInhibitDelay: number;
+  sellAfter: number;
   constructor(
-    marketMemory: MarketMemory,
+    marketMemory: MarketWatcher,
     onSold: (trade: BuyTradeInfo, amount: number, price: number) => void,
     opts?: {
       quoteAmount?: number;
       stopLossRatio?: number;
+      stopInhibitDelay?: number;
       trailingLimitRatio?: number;
+      sellAfter?: number;
     }
   ) {
     this.pair = marketMemory.pair;
@@ -49,6 +53,8 @@ export class TradeDriver {
     this.quoteAmount = opts?.quoteAmount || 100;
     this.stopLossRatio = opts?.stopLossRatio || 0.98;
     this.trailingLimitRatio = opts?.trailingLimitRatio || 0.85;
+    this.stopInhibitDelay = opts?.stopInhibitDelay || 0;
+    this.sellAfter = opts?.sellAfter || +Infinity;
     this.lastKline = this.history[0];
     this.info = debug(`tradeDriver:${this.pair}:info`);
     this.debug = debug(`tradeDriver:${this.pair}:debug`);
@@ -133,9 +139,16 @@ export class TradeDriver {
       this.highestPrice = msg.close;
     }
 
-    if (msg.close < this.buyTradeinfo.low) {
-      this.info('sell trigger. Reason: price below low (stop loss)');
+    if (this.buyTradeinfo.timestamp + this.sellAfter < Date.now()) {
+      this.info('sell trigger. Reason: sellAfter reached');
       return this.sell();
+    }
+
+    if (this.buyTradeinfo.timestamp >= Date.now() - this.stopInhibitDelay) {
+      if (msg.close < this.buyTradeinfo.low) {
+        this.info('sell trigger. Reason: price below low (stop loss)');
+        return this.sell();
+      }
     }
 
     if (msg.close < this.buyTradeinfo.price) {
@@ -144,6 +157,7 @@ export class TradeDriver {
 
     const highestPriceRelative = this.highestPrice / this.buyTradeinfo.price;
     if (
+      msg.close / this.buyTradeinfo.price >= 1.05 &&
       highestPriceRelative !== 0 &&
       (msg.close - this.buyTradeinfo.price) / highestPriceRelative <
         this.trailingLimitRatio

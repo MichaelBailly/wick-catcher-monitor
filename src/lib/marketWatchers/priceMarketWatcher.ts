@@ -1,8 +1,8 @@
 import { sub } from 'date-fns';
 import debug, { Debugger } from 'debug';
-import { IKline } from '../types/IKline';
+import { IKline } from '../../types/IKline';
 
-export class MarketMemory {
+export class PriceMarketWatcher {
   pair: string;
   d: Debugger;
   e: Debugger;
@@ -10,17 +10,18 @@ export class MarketMemory {
    * Array of 5 last minutes ITicks. 0 is the most recent tick.
    */
   minutes: IKline[] = [];
-  staleMinuteEnd: number | null = null;
+  staleMinute: IKline | null = null;
   flashWickRatio: number;
   historySize: number;
+  minutesUpdated: boolean = false;
 
   constructor(
     pair: string,
     opts?: { flashWickRatio?: number; historySize?: number }
   ) {
     this.pair = pair;
-    this.d = debug(`lib:marketMemory:${this.pair}`);
-    this.e = debug(`lib:marketMemory:${this.pair}:error`);
+    this.d = debug(`lib:PriceMarketWatcher:${this.pair}`);
+    this.e = debug(`lib:PriceMarketWatcher:${this.pair}:error`);
     this.flashWickRatio = opts?.flashWickRatio || 1.1;
     this.historySize = opts?.historySize || 5;
   }
@@ -30,22 +31,17 @@ export class MarketMemory {
       this.d('Interval not supported "%s"', msg.interval);
       return;
     }
-    if (this.minutes.length === 0) {
-      if (this.staleMinuteEnd === null) {
-        this.staleMinuteEnd = msg.end;
-      } else if (this.staleMinuteEnd < msg.start) {
-        this.minutes.push({ ...msg });
-        this.staleMinuteEnd = msg.end;
-      }
-    } else {
-      if (this.minutes[0].end < msg.start) {
-        this.minutes.unshift({ ...msg });
-        if (this.minutes.length > this.historySize) {
-          this.minutes.pop();
-        }
-      } else {
-        this.minutes[0] = { ...msg };
-      }
+    if (this.staleMinute === null || this.staleMinute.end > msg.start) {
+      this.staleMinute = { ...msg };
+      this.minutesUpdated = false;
+    } else if (this.staleMinute.end < msg.start) {
+      this.minutes.unshift({ ...this.staleMinute });
+      this.staleMinute = msg;
+      this.minutesUpdated = true;
+    }
+
+    if (this.minutes.length > this.historySize) {
+      this.minutes.pop();
     }
   }
 
@@ -65,6 +61,11 @@ export class MarketMemory {
 
   detectFlashWick() {
     let detected = false;
+
+    if (!this.minutesUpdated) {
+      return detected;
+    }
+
     if (this.minutes.length < this.historySize) {
       return detected;
     }
@@ -97,6 +98,6 @@ export class MarketMemory {
   }
 
   getConfLine() {
-    return `${this.pair}-${this.flashWickRatio}-${this.historySize}`;
+    return `price-${this.pair}-${this.flashWickRatio}-${this.historySize}`;
   }
 }
