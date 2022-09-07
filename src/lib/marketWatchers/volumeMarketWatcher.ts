@@ -15,10 +15,23 @@ export class VolumeMarketWatcher {
   historySize: number = 45;
   volumeThresholdRatio: number = 40;
 
-  constructor(pair: string) {
+  constructor(
+    pair: string,
+    opts?: {
+      volumeThresholdRatio?: number;
+      historySize?: number;
+    }
+  ) {
     this.pair = pair;
     this.d = debug(`lib:VolumeMarketWatcher:${this.pair}`);
     this.e = debug(`lib:VolumeMarketWatcher:${this.pair}:error`);
+
+    if (opts?.historySize) {
+      this.historySize = opts.historySize;
+    }
+    if (opts?.volumeThresholdRatio) {
+      this.volumeThresholdRatio = opts.volumeThresholdRatio;
+    }
   }
 
   onKlineMessage(msg: IKline) {

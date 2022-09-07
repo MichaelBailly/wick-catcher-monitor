@@ -4,8 +4,10 @@ import { writeFile } from 'fs/promises';
 import { RECORDER_FILE_PATH } from '../config';
 import { BuyTradeInfo } from '../types/BuyTradeInfo';
 import { IKline } from '../types/IKline';
+import { MarketWatcher } from '../types/MarketWatcher';
 import { MarketFlashWickRecorder } from './marketFlashWickRecorder';
 import { MarketMemoryCollection } from './marketMemoryCollection';
+import { Pnl } from './pnl';
 import { TradeDriver } from './tradeDriver';
 
 const ALIVE_TTL = 30 * 60 * 1000;
@@ -18,11 +20,13 @@ export class MarketOrchestrator {
     new Map();
   tradeDrivers: Map<string, Set<TradeDriver>> = new Map();
   log: debug.Debugger;
+  pnl: Pnl;
   constructor(private marketMemoryCollections: MarketMemoryCollection[]) {
     this.collections = marketMemoryCollections;
     this.log = debug('marketOrchestrator');
     this.aliveCount = 0;
     this.aliveTimestamp = Date.now() + ALIVE_TTL;
+    this.pnl = new Pnl();
   }
 
   onKline(pair: string, msg: IKline) {
@@ -35,51 +39,11 @@ export class MarketOrchestrator {
   marketMemoryHook(pair: string, msg: IKline) {
     for (const collection of this.collections) {
       const marketMemories = collection.get(pair);
-      for (const marketMemory of marketMemories) {
-        marketMemory.onKlineMessage(msg);
-        if (marketMemory.detectFlashWick()) {
+      for (const marketWatcher of marketMemories) {
+        marketWatcher.onKlineMessage(msg);
+        if (marketWatcher.detectFlashWick()) {
           this.log('%o flash wick detected on %s', new Date(), pair);
-          let collectionRecorders = this.recorders.get(collection);
-          if (!collectionRecorders) {
-            collectionRecorders = new Map<string, MarketFlashWickRecorder>();
-            this.recorders.set(collection, collectionRecorders);
-          }
-          const recorder = collectionRecorders.get(pair);
-          if (!recorder) {
-            collectionRecorders.set(
-              pair,
-              new MarketFlashWickRecorder(
-                marketMemory,
-                () => {
-                  collectionRecorders?.delete(pair);
-                },
-                { filePath: RECORDER_FILE_PATH }
-              )
-            );
-
-            const tradeDriver = new TradeDriver(
-              marketMemory,
-              (trade: BuyTradeInfo, amount: number, price: number) => {
-                const tradeDrivers = this.tradeDrivers.get(pair);
-                if (tradeDrivers) {
-                  tradeDrivers.delete(tradeDriver);
-                  this.recordTradeSummary(tradeDriver, amount, price);
-                }
-              },
-              {
-                stopInhibitDelay: 1000 * 60 * 15,
-                sellAfter: 1000 * 60 * 60,
-              }
-            );
-            tradeDriver.start();
-
-            let set = this.tradeDrivers.get(pair);
-            if (!set) {
-              set = new Set<TradeDriver>();
-              this.tradeDrivers.set(pair, set);
-            }
-            set.add(tradeDriver);
-          }
+          this.onFlashWick(collection, marketWatcher, pair, msg);
         }
       }
     }
@@ -109,6 +73,9 @@ export class MarketOrchestrator {
       this.log('Still alive, %d messages processed', this.aliveCount);
       this.aliveTimestamp = Date.now() + ALIVE_TTL;
       this.aliveCount = 0;
+      this.log(this.pnl.getSummary());
+      console.log(this.pnl.getSummary());
+      this.log('------------------------------------------------------');
     }
   }
 
@@ -123,5 +90,64 @@ export class MarketOrchestrator {
       soldPrice: price,
     };
     writeFile(filename, JSON.stringify(data));
+  }
+
+  onFlashWick(
+    collection: MarketMemoryCollection,
+    marketWatcher: MarketWatcher,
+    pair: string,
+    msg: IKline
+  ) {
+    let collectionRecorders = this.recorders.get(collection);
+    if (!collectionRecorders) {
+      collectionRecorders = new Map<string, MarketFlashWickRecorder>();
+      this.recorders.set(collection, collectionRecorders);
+    }
+    const recorder = collectionRecorders.get(pair);
+    if (!recorder) {
+      this.onNewFlashWick(collectionRecorders, marketWatcher, pair, msg);
+    }
+  }
+
+  onNewFlashWick(
+    collectionRecorders: Map<string, MarketFlashWickRecorder>,
+    marketWatcher: MarketWatcher,
+    pair: string,
+    msg: IKline
+  ) {
+    collectionRecorders.set(
+      pair,
+      new MarketFlashWickRecorder(
+        marketWatcher,
+        () => {
+          collectionRecorders?.delete(pair);
+        },
+        { filePath: RECORDER_FILE_PATH }
+      )
+    );
+
+    const tradeDriver = new TradeDriver(
+      marketWatcher,
+      (trade: BuyTradeInfo, amount: number, price: number) => {
+        const tradeDrivers = this.tradeDrivers.get(pair);
+        if (tradeDrivers) {
+          tradeDrivers.delete(tradeDriver);
+          this.recordTradeSummary(tradeDriver, amount, price);
+        }
+        this.pnl.onEndOfTrade(tradeDriver, trade, amount, price);
+      },
+      {
+        stopInhibitDelay: 1000 * 60 * 15,
+        sellAfter: 1000 * 60 * 60,
+      }
+    );
+    tradeDriver.start();
+
+    let set = this.tradeDrivers.get(pair);
+    if (!set) {
+      set = new Set<TradeDriver>();
+      this.tradeDrivers.set(pair, set);
+    }
+    set.add(tradeDriver);
   }
 }

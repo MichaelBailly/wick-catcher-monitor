@@ -9,7 +9,10 @@ const orchestrators: MarketOrchestrator[] = [];
 const marketMemoryCollections = [];
 marketMemoryCollections.push(new MarketMemoryCollection());
 marketMemoryCollections.push(
-  new MarketMemoryCollection({ flashWickRatio: 1.075 })
+  new MarketMemoryCollection({
+    flashWickRatio: 1.075,
+    volumeThreasoldRatio: 60,
+  })
 );
 const orchestrator = new MarketOrchestrator(marketMemoryCollections);
 

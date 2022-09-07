@@ -5,7 +5,6 @@ export type MarketWatcher = {
   d: debug.Debugger;
   e: debug.Debugger;
   minutes: IKline[];
-  staleMinuteEnd: number | null;
   historySize: number;
   onKlineMessage: (msg: IKline) => void;
   detectFlashWick: () => boolean;
