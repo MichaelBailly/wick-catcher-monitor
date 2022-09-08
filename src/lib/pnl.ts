@@ -1,4 +1,5 @@
-import { BuyTradeInfo } from '../types/BuyTradeInfo';
+import { MarketWatcherConfData } from '../types/MarketWatcherConfData';
+import { TradeResult } from '../types/TradeResult';
 import { TradeDriver } from './tradeDriver';
 
 type PnlSummary = {
@@ -7,17 +8,18 @@ type PnlSummary = {
   pnl: number;
 };
 
+function confDataHash(confData: MarketWatcherConfData): string {
+  return `${confData.type} ${confData.config}`;
+}
+
 export class Pnl {
   types: Record<string, PnlSummary> = {};
 
-  onEndOfTrade(
-    trade: TradeDriver,
-    tradeinfos: BuyTradeInfo,
-    amount: number,
-    price: number
-  ) {
-    const watcherType = trade.confLine.split('-').shift();
-    const pnl = price * amount - tradeinfos.price * tradeinfos.amount;
+  onEndOfTrade(trade: TradeDriver, tradeResult: TradeResult) {
+    const watcherType = confDataHash(trade.confData);
+    const pnl =
+      tradeResult.soldPrice * tradeResult.soldAmount -
+      tradeResult.price * tradeResult.amount;
 
     if (!watcherType) {
       return;

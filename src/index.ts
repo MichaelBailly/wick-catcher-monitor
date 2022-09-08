@@ -12,6 +12,10 @@ marketMemoryCollections.push(
   new MarketMemoryCollection({
     flashWickRatio: 1.075,
     volumeThreasoldRatio: 60,
+  }),
+  new MarketMemoryCollection({
+    flashWickRatio: 1.055,
+    volumeThreasoldRatio: 90,
   })
 );
 const orchestrator = new MarketOrchestrator(marketMemoryCollections);

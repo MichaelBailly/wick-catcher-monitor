@@ -2,6 +2,9 @@ export type BuyTradeInfo = {
   amount: number;
   quoteAmount: number;
   price: number;
-  timestamp: number;
+  buyTimestamp: number;
+  boughtTimestamp: number;
+  sellTimestamp: number;
+  soldTimestamp: number;
   low: number;
 };

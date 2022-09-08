@@ -1,4 +1,5 @@
 import { IKline } from './IKline';
+import { MarketWatcherConfData } from './MarketWatcherConfData';
 
 export type MarketWatcher = {
   pair: string;
@@ -10,4 +11,5 @@ export type MarketWatcher = {
   detectFlashWick: () => boolean;
   getHistory: () => IKline[];
   getConfLine: () => string;
+  getConfData: () => MarketWatcherConfData;
 };

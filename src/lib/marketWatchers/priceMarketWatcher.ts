@@ -100,4 +100,12 @@ export class PriceMarketWatcher {
   getConfLine() {
     return `price-${this.pair}-${this.flashWickRatio}-${this.historySize}`;
   }
+
+  getConfData() {
+    return {
+      type: 'price',
+      pair: this.pair,
+      config: `${this.flashWickRatio}-${this.historySize}`,
+    };
+  }
 }

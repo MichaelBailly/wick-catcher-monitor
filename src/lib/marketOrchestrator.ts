@@ -2,9 +2,9 @@ import { format } from 'date-fns';
 import debug from 'debug';
 import { writeFile } from 'fs/promises';
 import { RECORDER_FILE_PATH } from '../config';
-import { BuyTradeInfo } from '../types/BuyTradeInfo';
 import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
+import { TradeResult } from '../types/TradeResult';
 import { MarketFlashWickRecorder } from './marketFlashWickRecorder';
 import { MarketMemoryCollection } from './marketMemoryCollection';
 import { Pnl } from './pnl';
@@ -70,7 +70,11 @@ export class MarketOrchestrator {
   aliveHook() {
     this.aliveCount++;
     if (Date.now() > this.aliveTimestamp) {
-      this.log('Still alive, %d messages processed', this.aliveCount);
+      this.log(
+        '%s - Still alive, %d messages processed',
+        new Date().toDateString(),
+        this.aliveCount
+      );
       this.aliveTimestamp = Date.now() + ALIVE_TTL;
       this.aliveCount = 0;
       this.log(this.pnl.getSummary());
@@ -79,15 +83,13 @@ export class MarketOrchestrator {
     }
   }
 
-  recordTradeSummary(trade: TradeDriver, amount: number, price: number) {
+  recordTradeSummary(trade: TradeDriver, tradeResult: TradeResult) {
     const filename = `${RECORDER_FILE_PATH}/trade-${trade.confLine}-${format(
       new Date(),
       'yyyyMMddHHmm'
     )}.csv`;
     const data = {
-      ...trade.buyTradeinfo,
-      soldAmount: amount,
-      soldPrice: price,
+      ...tradeResult,
     };
     writeFile(filename, JSON.stringify(data));
   }
@@ -128,13 +130,13 @@ export class MarketOrchestrator {
 
     const tradeDriver = new TradeDriver(
       marketWatcher,
-      (trade: BuyTradeInfo, amount: number, price: number) => {
+      (tradeResult: TradeResult) => {
         const tradeDrivers = this.tradeDrivers.get(pair);
         if (tradeDrivers) {
           tradeDrivers.delete(tradeDriver);
-          this.recordTradeSummary(tradeDriver, amount, price);
+          this.recordTradeSummary(tradeDriver, tradeResult);
         }
-        this.pnl.onEndOfTrade(tradeDriver, trade, amount, price);
+        this.pnl.onEndOfTrade(tradeDriver, tradeResult);
       },
       {
         stopInhibitDelay: 1000 * 60 * 15,
