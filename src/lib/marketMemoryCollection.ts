@@ -4,33 +4,38 @@ import { VolumeMarketWatcher } from './marketWatchers/volumeMarketWatcher';
 
 export class MarketMemoryCollection {
   private marketWatchers: Map<string, MarketWatcher[]> = new Map();
-  private marketMemoryOpts = {
+  private priceMarketWatcherOpts = {
     flashWickRatio: 1.1,
+    realtimeDetection: false,
     historySize: 5,
   };
-  private volumeWatcherMemoryOpts = {
+  private volumeMarketWatcherOpts = {
     historySize: 45,
     volumeThreasoldRatio: 40,
   };
 
   constructor(opts?: {
     flashWickRatio?: number;
+    realtimeDetection?: boolean;
     historySize?: number;
     volumeHistorySize?: number;
     volumeThreasoldRatio?: number;
   }) {
     if (opts?.flashWickRatio) {
-      this.marketMemoryOpts.flashWickRatio = opts.flashWickRatio;
+      this.priceMarketWatcherOpts.flashWickRatio = opts.flashWickRatio;
+    }
+    if (opts?.realtimeDetection) {
+      this.priceMarketWatcherOpts.realtimeDetection = opts.realtimeDetection;
     }
     if (opts?.historySize) {
-      this.marketMemoryOpts.historySize = opts.historySize;
+      this.priceMarketWatcherOpts.historySize = opts.historySize;
     }
 
     if (opts?.volumeHistorySize) {
-      this.volumeWatcherMemoryOpts.historySize = opts.volumeHistorySize;
+      this.volumeMarketWatcherOpts.historySize = opts.volumeHistorySize;
     }
     if (opts?.volumeThreasoldRatio) {
-      this.volumeWatcherMemoryOpts.volumeThreasoldRatio =
+      this.volumeMarketWatcherOpts.volumeThreasoldRatio =
         opts.volumeThreasoldRatio;
     }
   }
@@ -38,8 +43,8 @@ export class MarketMemoryCollection {
   get(pair: string): MarketWatcher[] {
     if (!this.marketWatchers.has(pair)) {
       this.marketWatchers.set(pair, [
-        new PriceMarketWatcher(pair, { ...this.marketMemoryOpts }),
-        new VolumeMarketWatcher(pair, { ...this.volumeWatcherMemoryOpts }),
+        new PriceMarketWatcher(pair, { ...this.priceMarketWatcherOpts }),
+        new VolumeMarketWatcher(pair, { ...this.volumeMarketWatcherOpts }),
       ]);
     }
     const marketMemory = this.marketWatchers.get(pair);

@@ -14,16 +14,22 @@ export class PriceMarketWatcher {
   flashWickRatio: number;
   historySize: number;
   minutesUpdated: boolean = false;
+  realtimeDetection: boolean = false;
 
   constructor(
     pair: string,
-    opts?: { flashWickRatio?: number; historySize?: number }
+    opts?: {
+      flashWickRatio?: number;
+      historySize?: number;
+      realtimeDetection?: boolean;
+    }
   ) {
     this.pair = pair;
     this.d = debug(`lib:PriceMarketWatcher:${this.pair}`);
     this.e = debug(`lib:PriceMarketWatcher:${this.pair}:error`);
     this.flashWickRatio = opts?.flashWickRatio || 1.1;
     this.historySize = opts?.historySize || 5;
+    this.realtimeDetection = opts?.realtimeDetection || false;
   }
 
   onKlineMessage(msg: IKline) {
@@ -60,6 +66,48 @@ export class PriceMarketWatcher {
   }
 
   detectFlashWick() {
+    return this.realtimeDetection
+      ? this.detectFlashWickRealTime()
+      : this.detectFlashWickPerMinute();
+  }
+
+  detectFlashWickRealTime() {
+    let detected = false;
+    if (!this.staleMinute) {
+      return detected;
+    }
+
+    if (this.minutes.length < this.historySize) {
+      return detected;
+    }
+    if (!this.isConcurrentMinutes()) {
+      return detected;
+    }
+
+    const current = this.staleMinute;
+
+    const minutes = [current, ...this.minutes];
+
+    for (let i = 0; i < minutes.length; i++) {
+      const previous = minutes[i];
+
+      const pctDiff = current.close / previous.open;
+
+      if (pctDiff > this.flashWickRatio) {
+        this.d(
+          'Flash wick detected: %d in %d minutes - %o',
+          pctDiff,
+          i + 1,
+          new Date()
+        );
+        detected = true;
+      }
+    }
+
+    return detected;
+  }
+
+  detectFlashWickPerMinute() {
     let detected = false;
 
     if (!this.minutesUpdated) {
