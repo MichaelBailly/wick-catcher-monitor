@@ -1,8 +1,16 @@
 import { MarketWatcher } from '../types/MarketWatcher';
+import { PriceMarketWatcherOpts } from '../types/PriceMarketWatcherOpts';
+import { VolumeMarketWatcherOpts } from '../types/VolumeMarketWatcherOpts';
 import { PriceMarketWatcher } from './marketWatchers/priceMarketWatcher';
 import { VolumeMarketWatcher } from './marketWatchers/volumeMarketWatcher';
 
+type MarketWatcherType = {
+  type: string;
+  opts: PriceMarketWatcherOpts | VolumeMarketWatcherOpts;
+};
+
 export class MarketMemoryCollection {
+  private marketWatcherTypes: Set<MarketWatcherType> = new Set();
   private marketWatchers: Map<string, MarketWatcher[]> = new Map();
   private priceMarketWatcherOpts = {
     flashWickRatio: 1.1,
@@ -42,10 +50,26 @@ export class MarketMemoryCollection {
 
   get(pair: string): MarketWatcher[] {
     if (!this.marketWatchers.has(pair)) {
-      this.marketWatchers.set(pair, [
-        new PriceMarketWatcher(pair, { ...this.priceMarketWatcherOpts }),
-        new VolumeMarketWatcher(pair, { ...this.volumeMarketWatcherOpts }),
-      ]);
+      const watchers = [];
+      watchers.push(
+        new PriceMarketWatcher(pair, { ...this.priceMarketWatcherOpts })
+      );
+      watchers.push(
+        new VolumeMarketWatcher(pair, { ...this.volumeMarketWatcherOpts })
+      );
+
+      for (const marketWatcherType of this.marketWatcherTypes) {
+        if (marketWatcherType.type === 'price') {
+          watchers.push(
+            new PriceMarketWatcher(pair, { ...marketWatcherType.opts })
+          );
+        } else if (marketWatcherType.type === 'volume') {
+          watchers.push(
+            new VolumeMarketWatcher(pair, { ...marketWatcherType.opts })
+          );
+        }
+      }
+      this.marketWatchers.set(pair, watchers);
     }
     const marketMemory = this.marketWatchers.get(pair);
     // to satisfy TS...
@@ -53,5 +77,19 @@ export class MarketMemoryCollection {
       throw new Error('MarketMemoryCollection.get() returned undefined');
     }
     return marketMemory;
+  }
+
+  addPriceMarketWatcher(opts: PriceMarketWatcherOpts) {
+    this.marketWatcherTypes.add({
+      type: 'price',
+      opts: { ...opts },
+    });
+  }
+
+  addVolumeMarketWatcher(opts: VolumeMarketWatcherOpts) {
+    this.marketWatcherTypes.add({
+      type: 'volume',
+      opts: { ...opts },
+    });
   }
 }

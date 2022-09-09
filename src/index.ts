@@ -12,19 +12,26 @@ if (process.env.XX_REALTIME_PRICE_WATCH === 'true') {
 }
 
 const marketMemoryCollections = [];
-marketMemoryCollections.push(new MarketMemoryCollection());
-marketMemoryCollections.push(
-  new MarketMemoryCollection({
-    flashWickRatio: 1.075,
-    volumeThreasoldRatio: 60,
-    realtimeDetection: realtimePriceWatch,
-  }),
-  new MarketMemoryCollection({
-    flashWickRatio: 1.055,
-    volumeThreasoldRatio: 90,
-    realtimeDetection: realtimePriceWatch,
-  })
-);
+const collection = new MarketMemoryCollection();
+collection.addPriceMarketWatcher({ realtimeDetection: realtimePriceWatch });
+collection.addPriceMarketWatcher({
+  flashWickRatio: 1.075,
+  realtimeDetection: realtimePriceWatch,
+});
+collection.addPriceMarketWatcher({
+  flashWickRatio: 1.055,
+  realtimeDetection: realtimePriceWatch,
+});
+collection.addVolumeMarketWatcher({});
+collection.addVolumeMarketWatcher({
+  volumeThreasoldRatio: 60,
+});
+collection.addVolumeMarketWatcher({
+  volumeThreasoldRatio: 90,
+});
+
+marketMemoryCollections.push(collection);
+
 const orchestrator = new MarketOrchestrator(marketMemoryCollections);
 
 orchestrators.push(orchestrator);

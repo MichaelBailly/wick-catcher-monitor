@@ -75,11 +75,10 @@ export class MarketOrchestrator {
         new Date().toDateString(),
         this.aliveCount
       );
+      this.log(this.pnl.getSummary());
+      this.log('------------------------------------------------------');
       this.aliveTimestamp = Date.now() + ALIVE_TTL;
       this.aliveCount = 0;
-      this.log(this.pnl.getSummary());
-      console.log(this.pnl.getSummary());
-      this.log('------------------------------------------------------');
     }
   }
 
