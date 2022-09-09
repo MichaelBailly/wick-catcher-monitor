@@ -146,14 +146,18 @@ export class PriceMarketWatcher {
   }
 
   getConfLine() {
-    return `price-${this.pair}-${this.flashWickRatio}-${this.historySize}`;
+    return `price-${this.pair}-${this.realtimeDetection ? 'true' : 'false'}-${
+      this.flashWickRatio
+    }-${this.historySize}`;
   }
 
   getConfData() {
     return {
       type: 'price',
       pair: this.pair,
-      config: `${this.flashWickRatio}-${this.historySize}`,
+      config: `${this.realtimeDetection ? 'true' : 'false'}-${
+        this.flashWickRatio
+      }-${this.historySize}`,
     };
   }
 }
