@@ -81,10 +81,10 @@ export class PriceMarketWatcher {
 
       if (pctDiff > this.flashWickRatio) {
         this.d(
-          'Flash wick detected: *%d in %d minutes - %s',
+          'Flash wick detected: %d in %d minutes - %o',
           pctDiff,
           i + 1,
-          new Date().toUTCString()
+          new Date()
         );
         detected = true;
       }

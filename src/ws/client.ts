@@ -17,8 +17,8 @@ class SocketClient {
   }
 
   start() {
-    const ws = this._ws;
     this._ws = new WebSocket(`${this.baseUrl}${this._path}`);
+    const ws = this._ws;
 
     this._ws.onopen = () => {
       d('ws connected');

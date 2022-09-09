@@ -88,7 +88,7 @@ export class VolumeMarketWatcher {
 
   getConfData() {
     return {
-      type: 'price',
+      type: 'volume',
       pair: this.pair,
       config: `${this.volumeThresholdRatio}-${this.historySize}`,
     };
