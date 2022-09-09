@@ -72,16 +72,15 @@ export class PriceMarketWatcher {
   }
 
   detectFlashWickRealTime() {
-    let detected = false;
     if (!this.staleMinute) {
-      return detected;
+      return false;
     }
 
     if (this.minutes.length < this.historySize) {
-      return detected;
+      return false;
     }
     if (!this.isConcurrentMinutes()) {
-      return detected;
+      return false;
     }
 
     const current = this.staleMinute;
@@ -100,11 +99,11 @@ export class PriceMarketWatcher {
           i + 1,
           new Date()
         );
-        detected = true;
+        return true;
       }
     }
 
-    return detected;
+    return false;
   }
 
   detectFlashWickPerMinute() {
