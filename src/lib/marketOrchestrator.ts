@@ -136,6 +136,7 @@ export class MarketOrchestrator {
           this.recordTradeSummary(tradeDriver, tradeResult);
         }
         this.pnl.onEndOfTrade(tradeDriver, tradeResult);
+        this.log('concurrent trades: %d', this.getConcurrentTradesCount());
       },
       {
         stopInhibitDelay: 1000 * 60 * 15,
@@ -150,5 +151,15 @@ export class MarketOrchestrator {
       this.tradeDrivers.set(pair, set);
     }
     set.add(tradeDriver);
+
+    this.log('concurrent trades: %d', this.getConcurrentTradesCount());
+  }
+
+  getConcurrentTradesCount() {
+    let count = 0;
+    for (const [_, tradeDrivers] of this.tradeDrivers) {
+      count += tradeDrivers.size;
+    }
+    return count;
   }
 }
