@@ -93,12 +93,6 @@ export class PriceMarketWatcher {
       const pctDiff = current.close / previous.open;
 
       if (pctDiff > this.flashWickRatio) {
-        this.d(
-          'Flash wick detected: %d in %d minutes - %o',
-          pctDiff,
-          i + 1,
-          new Date()
-        );
         return true;
       }
     }
@@ -120,8 +114,8 @@ export class PriceMarketWatcher {
       return detected;
     }
 
+    const current = this.minutes[0];
     for (let i = 0; i < this.minutes.length; i++) {
-      const current = this.minutes[0];
       const previous = this.minutes[i];
 
       const pctDiff = current.close / previous.open;

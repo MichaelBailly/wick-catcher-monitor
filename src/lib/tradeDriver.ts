@@ -188,11 +188,22 @@ export class TradeDriver {
     }
 
     const highestPriceRelative = this.highestPrice / this.buyTradeinfo.price;
+    const priceRatio = msg.close / this.buyTradeinfo.price;
+    const trailingLimit =
+      highestPriceRelative === 0
+        ? +Infinity
+        : (msg.close - this.buyTradeinfo.price) / highestPriceRelative;
+    this.info(
+      'price %d, highestPriceRelativePercent %d, trailingLimit %d (ratio %d)',
+      priceRatio,
+      highestPriceRelative,
+      trailingLimit,
+      this.trailingLimitRatio
+    );
     if (
-      msg.close / this.buyTradeinfo.price >= 1.05 &&
+      priceRatio >= 1.05 &&
       highestPriceRelative !== 0 &&
-      (msg.close - this.buyTradeinfo.price) / highestPriceRelative <
-        this.trailingLimitRatio
+      trailingLimit < this.trailingLimitRatio
     ) {
       this.info('sell trigger. Reason: price dropped below trailing limit');
       return this.sell();

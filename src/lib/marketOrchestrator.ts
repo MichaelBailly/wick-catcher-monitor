@@ -38,11 +38,19 @@ export class MarketOrchestrator {
 
   marketMemoryHook(pair: string, msg: IKline) {
     for (const collection of this.collections) {
-      const marketMemories = collection.get(pair);
-      for (const marketWatcher of marketMemories) {
+      const marketWatchers = collection.get(pair);
+      for (const marketWatcher of marketWatchers) {
         marketWatcher.onKlineMessage(msg);
+        this.log('sent to %s', marketWatcher.getConfLine());
         if (marketWatcher.detectFlashWick()) {
-          this.log('%o flash wick detected on %s', new Date(), pair);
+          const trades = this.tradeDrivers.get(pair);
+          if (!trades || trades.size === 0) {
+            this.log(
+              '%o flash wick detected on %s',
+              new Date(),
+              marketWatcher.getConfLine()
+            );
+          }
           this.onFlashWick(collection, marketWatcher, pair, msg);
         }
       }
