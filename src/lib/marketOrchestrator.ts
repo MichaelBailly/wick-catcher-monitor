@@ -76,9 +76,14 @@ export class MarketOrchestrator {
         this.aliveCount
       );
       this.log('%d concurrent trades', this.getConcurrentTradesCount());
-      this.log(
-        hour === '0' ? this.pnl.getFullSummary() : this.pnl.getSummary()
-      );
+      let summaryString = '';
+      if (hour === '0') {
+        summaryString = this.pnl.getFullSummary();
+        this.recordDailySummary(summaryString);
+      } else {
+        summaryString = this.pnl.getSummary();
+      }
+      this.log(summaryString);
       this.log('------------------------------------------------------');
       this.aliveTimestamp = Date.now() + ALIVE_TTL;
       this.aliveCount = 0;
@@ -94,6 +99,11 @@ export class MarketOrchestrator {
       ...tradeResult,
     };
     writeFile(filename, JSON.stringify(data));
+  }
+
+  recordDailySummary(summary: string) {
+    const filename = `${RECORDER_FILE_PATH}/summary.txt`;
+    writeFile(filename, summary);
   }
 
   onFlashWick(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
