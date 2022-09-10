@@ -3,6 +3,7 @@ import { BuyTradeInfo } from '../types/BuyTradeInfo';
 import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
 import { MarketWatcherConfData } from '../types/MarketWatcherConfData';
+import { TradeDriverOpts } from '../types/TradeDriverOpts';
 import { TradeResult } from '../types/TradeResult';
 
 enum TradeState {
@@ -41,16 +42,11 @@ export class TradeDriver {
   sellTimeoutId: NodeJS.Timeout | null = null;
   stopInhibitDelay: number;
   sellAfter: number;
+  sellDirect: boolean = false;
   constructor(
     marketWatcher: MarketWatcher,
     onSold: (trade: TradeResult) => void,
-    opts?: {
-      quoteAmount?: number;
-      stopLossRatio?: number;
-      stopInhibitDelay?: number;
-      trailingLimitRatio?: number;
-      sellAfter?: number;
-    }
+    opts?: TradeDriverOpts
   ) {
     this.pair = marketWatcher.pair;
     this.soldCallback = onSold;
@@ -62,6 +58,7 @@ export class TradeDriver {
     this.trailingLimitRatio = opts?.trailingLimitRatio || 0.85;
     this.stopInhibitDelay = opts?.stopInhibitDelay || 0;
     this.sellAfter = opts?.sellAfter || +Infinity;
+    this.sellDirect = opts?.sellDirect || false;
     this.lastKline = this.history[0];
     this.info = debug(`tradeDriver:${this.pair}:info`);
     this.debug = debug(`tradeDriver:${this.pair}:debug`);
@@ -80,7 +77,7 @@ export class TradeDriver {
       return;
     }
     this.state = TradeState.BUY;
-    this.info('%s - buy', new Date().toISOString());
+    this.info('%s - buy - %s', new Date().toISOString(), this.confLine);
     this.buyTradeinfo.buyTimestamp = Date.now();
     setTimeout(() => {
       this.state = TradeState.BOUGHT;
@@ -119,9 +116,10 @@ export class TradeDriver {
     }
     this.state = TradeState.SELL;
     this.info(
-      '%s - sell. current price=%d',
+      '%s - sell. current price=%d - %s',
       new Date().toISOString(),
-      this.lastKline.close
+      this.lastKline.close,
+      this.confLine
     );
     this.buyTradeinfo.sellTimestamp = Date.now();
     setTimeout(() => {
@@ -193,13 +191,13 @@ export class TradeDriver {
       highestPriceRelative === 0
         ? +Infinity
         : (msg.close - this.buyTradeinfo.price) / highestPriceRelative;
-    this.info(
-      'price %d, highestPriceRelativePercent %d, trailingLimit %d (ratio %d)',
-      priceRatio,
-      highestPriceRelative,
-      trailingLimit,
-      this.trailingLimitRatio
-    );
+    if (priceRatio >= 1.05) {
+      this.info('Price ratio crossed 1.05');
+      if (this.sellDirect) {
+        this.info('sell trigger. Reason: price ratio crossed 1.05');
+        return this.sell();
+      }
+    }
     if (
       priceRatio >= 1.05 &&
       highestPriceRelative !== 0 &&

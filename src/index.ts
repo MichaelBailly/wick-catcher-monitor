@@ -2,7 +2,13 @@ import debug from 'debug';
 import { getUsdtPairs } from './exchanges/binance';
 import { MarketMemoryCollection } from './lib/marketMemoryCollection';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
+import { TradeDriverOpts } from './types/TradeDriverOpts';
 import { start } from './ws';
+
+const tradeDriverOpts: TradeDriverOpts = {
+  stopInhibitDelay: 1000 * 60 * 15,
+  sellAfter: 1000 * 60 * 60,
+};
 
 const orchestrators: MarketOrchestrator[] = [];
 
@@ -11,9 +17,11 @@ if (process.env.XX_REALTIME_PRICE_WATCH === 'true') {
   realtimePriceWatch = true;
 }
 
-const marketMemoryCollections = [];
 const collection = new MarketMemoryCollection();
-collection.addPriceMarketWatcher({ realtimeDetection: realtimePriceWatch });
+collection.addPriceMarketWatcher({
+  flashWickRatio: 1.1,
+  realtimeDetection: realtimePriceWatch,
+});
 collection.addPriceMarketWatcher({
   flashWickRatio: 1.075,
   realtimeDetection: realtimePriceWatch,
@@ -24,15 +32,13 @@ collection.addPriceMarketWatcher({
 });
 collection.addVolumeMarketWatcher({});
 collection.addVolumeMarketWatcher({
-  volumeThreasoldRatio: 60,
+  volumeThresholdRatio: 60,
 });
 collection.addVolumeMarketWatcher({
-  volumeThreasoldRatio: 90,
+  volumeThresholdRatio: 90,
 });
 
-marketMemoryCollections.push(collection);
-
-const orchestrator = new MarketOrchestrator(marketMemoryCollections);
+const orchestrator = new MarketOrchestrator(collection, tradeDriverOpts);
 
 orchestrators.push(orchestrator);
 // const streamName = 'stream?streams=maticusdt@kline_1m/dotusdt@kline_1m';
