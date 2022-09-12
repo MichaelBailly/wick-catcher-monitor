@@ -1,11 +1,12 @@
-import { format } from 'date-fns';
+import { format, sub } from 'date-fns';
 import debug from 'debug';
 import { writeFile } from 'fs/promises';
-import { RECORDER_FILE_PATH } from '../config';
+import { RECORDER_FILE_PATH, XX_FOLLOW_BTC_TREND } from '../config';
 import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
 import { TradeDriverOpts } from '../types/TradeDriverOpts';
 import { TradeResult } from '../types/TradeResult';
+import { BtcTrendRecorder } from './BtcTrendRecorder';
 import { MarketMemoryCollection } from './marketMemoryCollection';
 import { Pnl } from './pnl';
 import { TradeDriver } from './tradeDriver';
@@ -21,6 +22,7 @@ export class MarketOrchestrator {
   collection: MarketMemoryCollection;
   watcherInhibiter: Set<string> = new Set();
   tradeOpts: TradeDriverOpts;
+  btcTrendRecorder = new BtcTrendRecorder();
   constructor(
     private marketMemoryCollection: MarketMemoryCollection,
     tradeOpts: TradeDriverOpts = {}
@@ -34,6 +36,10 @@ export class MarketOrchestrator {
   }
 
   onKline(pair: string, msg: IKline) {
+    if (XX_FOLLOW_BTC_TREND && pair === 'BTCUSDT') {
+      this.btcTrendRecorder.onKline(msg);
+      return;
+    }
     this.tradeDriverHook(pair, msg);
     this.marketMemoryHook(pair, msg);
     this.aliveHook();
@@ -71,8 +77,8 @@ export class MarketOrchestrator {
     if (Date.now() > this.aliveTimestamp) {
       const hour = format(new Date(), 'H');
       this.log(
-        '%s - Still alive, %d messages processed',
-        new Date().toDateString(),
+        '%so - Still alive, %d messages processed',
+        new Date(),
         this.aliveCount
       );
       this.log('%d concurrent trades', this.getConcurrentTradesCount());
@@ -104,6 +110,15 @@ export class MarketOrchestrator {
   recordDailySummary(summary: string) {
     const filename = `${RECORDER_FILE_PATH}/summary.txt`;
     writeFile(filename, summary);
+
+    const yesterday = format(sub(new Date(), { days: 1 }), 'yyyy-MM-dd');
+
+    const filename2 = `${RECORDER_FILE_PATH}/summary-${yesterday}.json`;
+    const body = {
+      date: yesterday,
+      summary: this.pnl.getDailySummary(yesterday),
+    };
+    writeFile(filename2, JSON.stringify(body));
   }
 
   onFlashWick(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
@@ -117,6 +132,10 @@ export class MarketOrchestrator {
   }
 
   onNewFlashWick(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
+    if (!this.btcTrendRecorder.isTrendOk) {
+      this.log('%o - BTC trend not ok', new Date());
+      return;
+    }
     const tradeDriver = new TradeDriver(
       marketWatcher,
       (tradeResult: TradeResult) => {

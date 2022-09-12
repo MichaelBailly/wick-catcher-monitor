@@ -19,12 +19,10 @@ export class TradeDriver {
   history: IKline[];
   confLine: string;
   confData: MarketWatcherConfData;
-  quoteAmount: number;
   state: TradeState = TradeState.NONE;
   lastKline: IKline;
-  stopLossRatio: number;
-  trailingLimitRatio: number;
   highestPrice: number = 0;
+  trailingActivated: boolean = false;
   buyTradeinfo: BuyTradeInfo = {
     amount: 0,
     quoteAmount: 0,
@@ -40,9 +38,14 @@ export class TradeDriver {
   debug: debug.Debugger;
   error: debug.Debugger;
   sellTimeoutId: NodeJS.Timeout | null = null;
+
+  quoteAmount: number;
+  stopLossRatio: number;
+  trailingLimitRatio: number;
   stopInhibitDelay: number;
   sellAfter: number;
   sellDirect: boolean = false;
+
   constructor(
     marketWatcher: MarketWatcher,
     onSold: (trade: TradeResult) => void,
@@ -185,26 +188,30 @@ export class TradeDriver {
       return;
     }
 
-    const highestPriceRelative = this.highestPrice / this.buyTradeinfo.price;
     const priceRatio = msg.close / this.buyTradeinfo.price;
-    const trailingLimit =
-      highestPriceRelative === 0
-        ? +Infinity
-        : (msg.close - this.buyTradeinfo.price) / highestPriceRelative;
+
+    if (this.trailingActivated) {
+      const highestPriceRelative = this.highestPrice / this.buyTradeinfo.price;
+      const trailingLimit =
+        highestPriceRelative === 0
+          ? +Infinity
+          : (msg.close - this.buyTradeinfo.price) / highestPriceRelative;
+      if (trailingLimit < this.trailingLimitRatio) {
+        this.info('sell trigger. Reason: price dropped below trailing limit');
+        return this.sell();
+      }
+      return;
+    }
+
     if (priceRatio >= 1.05) {
       this.info('Price ratio crossed 1.05');
       if (this.sellDirect) {
         this.info('sell trigger. Reason: price ratio crossed 1.05');
         return this.sell();
+      } else {
+        this.trailingActivated = true;
+        this.info('trailing activated');
       }
-    }
-    if (
-      priceRatio >= 1.05 &&
-      highestPriceRelative !== 0 &&
-      trailingLimit < this.trailingLimitRatio
-    ) {
-      this.info('sell trigger. Reason: price dropped below trailing limit');
-      return this.sell();
     }
   }
 }

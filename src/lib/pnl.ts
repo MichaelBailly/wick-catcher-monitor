@@ -96,4 +96,8 @@ export class Pnl {
     this.history.set(this.today, this.types);
     this.types = {};
   }
+
+  getDailySummary(day: string): Record<string, PnlSummary> {
+    return this.history.get(day) || {};
+  }
 }

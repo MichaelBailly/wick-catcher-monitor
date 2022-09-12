@@ -1,4 +1,5 @@
 import pThrottle from 'p-throttle';
+import { XX_FOLLOW_BTC_TREND } from '../config';
 import { IKline } from '../types/IKline';
 
 const throttled = pThrottle({
@@ -10,7 +11,7 @@ export async function getUsdtPairs(): Promise<string[]> {
   const url = 'https://api.binance.com/api/v3/exchangeInfo';
   const response = await fetch(url);
   const data = await response.json();
-  const pairs = data.symbols.filter(
+  let pairs = data.symbols.filter(
     (symbol: any) =>
       symbol.quoteAsset === 'USDT' &&
       symbol.baseAsset !== 'USDT' &&
@@ -19,13 +20,17 @@ export async function getUsdtPairs(): Promise<string[]> {
       symbol.baseAsset !== 'PUSD' &&
       symbol.baseAsset !== 'USDP' &&
       symbol.baseAsset !== 'BUSD' &&
+      symbol.baseAsset !== 'TUSDT' &&
       symbol.baseAsset !== 'USDC' &&
       symbol.baseAsset !== 'BTTC' &&
       symbol.isSpotTradingAllowed
   );
+
+  if (!XX_FOLLOW_BTC_TREND) {
+    pairs = pairs.filter((symbol: any) => symbol.baseAsset !== 'BTC');
+  }
   return pairs.map((pair: any) => pair.symbol);
 }
-
 export async function getLastDaysCandlesInternal(
   pair: string,
   days: number = 2
