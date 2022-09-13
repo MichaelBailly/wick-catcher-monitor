@@ -1,3 +1,4 @@
+import debug from 'debug';
 import { IKline } from '../types/IKline';
 
 const TREND_DURATION_MINUTES = 15;
@@ -6,6 +7,7 @@ export class BtcTrendRecorder {
   history: Array<IKline> = [];
   historySize: number = TREND_DURATION_MINUTES;
   trendOk: boolean = false;
+  log: debug.Debugger = debug('BtcTrendRecorder');
 
   onKline(msg: IKline) {
     if (!this.history.length || msg.start === this.history[0].start) {

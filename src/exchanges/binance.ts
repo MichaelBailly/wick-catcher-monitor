@@ -15,7 +15,6 @@ export async function getUsdtPairs(): Promise<string[]> {
     (symbol: any) =>
       symbol.quoteAsset === 'USDT' &&
       symbol.baseAsset !== 'USDT' &&
-      symbol.baseAsset !== 'BTC' &&
       symbol.baseAsset !== 'ETH' &&
       symbol.baseAsset !== 'PUSD' &&
       symbol.baseAsset !== 'USDP' &&

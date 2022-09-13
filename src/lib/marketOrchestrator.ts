@@ -14,25 +14,22 @@ import { TradeDriver } from './tradeDriver';
 const ALIVE_TTL = 30 * 60 * 1000;
 
 export class MarketOrchestrator {
-  aliveCount: number;
-  aliveTimestamp: number;
+  aliveCount: number = 0;
+  aliveTimestamp: number = Date.now() + ALIVE_TTL;
   tradeDrivers: Map<string, Set<TradeDriver>> = new Map();
-  log: debug.Debugger;
-  pnl: Pnl;
+  log: debug.Debugger = debug('marketOrchestrator');
+  pnl: Pnl = new Pnl();
   collection: MarketMemoryCollection;
   watcherInhibiter: Set<string> = new Set();
   tradeOpts: TradeDriverOpts;
   btcTrendRecorder = new BtcTrendRecorder();
+
   constructor(
     private marketMemoryCollection: MarketMemoryCollection,
     tradeOpts: TradeDriverOpts = {}
   ) {
     this.collection = marketMemoryCollection;
     this.tradeOpts = tradeOpts;
-    this.log = debug('marketOrchestrator');
-    this.aliveCount = 0;
-    this.aliveTimestamp = Date.now() + ALIVE_TTL;
-    this.pnl = new Pnl();
   }
 
   onKline(pair: string, msg: IKline) {
@@ -132,7 +129,7 @@ export class MarketOrchestrator {
   }
 
   onNewFlashWick(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
-    if (!this.btcTrendRecorder.isTrendOk) {
+    if (XX_FOLLOW_BTC_TREND && !this.btcTrendRecorder.trendOk) {
       this.log('%o - BTC trend not ok', new Date());
       return;
     }

@@ -1,10 +1,15 @@
 import debug from 'debug';
-import { XX_REALTIME_PRICE_WATCH } from './config';
+import { XX_FOLLOW_BTC_TREND, XX_REALTIME_PRICE_WATCH } from './config';
 import { getUsdtPairs } from './exchanges/binance';
 import { MarketMemoryCollection } from './lib/marketMemoryCollection';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
 import { TradeDriverOpts } from './types/TradeDriverOpts';
 import { start } from './ws';
+
+const d = debug('index');
+
+d('Follow btc trend: %s', XX_FOLLOW_BTC_TREND);
+d('Realtime price watch: %s', XX_REALTIME_PRICE_WATCH);
 
 const tradeDriverOpts: TradeDriverOpts = {
   sellDirect: false,
@@ -31,6 +36,11 @@ collection.addPriceMarketWatcher({
   flashWickRatio: 1.055,
   realtimeDetection: XX_REALTIME_PRICE_WATCH,
 });
+collection.addPriceMarketWatcher({
+  historySize: 0,
+  flashWickRatio: 1.03,
+  realtimeDetection: XX_REALTIME_PRICE_WATCH,
+});
 
 collection.addVolumeMarketWatcher({});
 collection.addVolumeMarketWatcher({
@@ -46,8 +56,6 @@ collection.addVolumeMarketWatcher({
 const orchestrator = new MarketOrchestrator(collection, tradeDriverOpts);
 
 orchestrators.push(orchestrator);
-
-const d = debug('index');
 
 async function run() {
   const pairs = await getUsdtPairs();
