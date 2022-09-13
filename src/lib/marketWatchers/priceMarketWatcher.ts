@@ -28,7 +28,7 @@ export class PriceMarketWatcher {
     this.d = debug(`lib:PriceMarketWatcher:${this.pair}`);
     this.e = debug(`lib:PriceMarketWatcher:${this.pair}:error`);
     this.flashWickRatio = opts?.flashWickRatio || 1.1;
-    this.historySize = opts?.historySize || 5;
+    this.historySize = opts?.historySize !== undefined ? opts.historySize : 5;
     this.realtimeDetection = opts?.realtimeDetection || false;
   }
 
