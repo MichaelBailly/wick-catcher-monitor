@@ -97,9 +97,13 @@ export class MarketOrchestrator {
     const filename = `${RECORDER_FILE_PATH}/trade-${trade.confLine}-${format(
       new Date(),
       'yyyyMMddHHmm'
-    )}.csv`;
+    )}.json`;
     const data = {
       ...tradeResult,
+      watcher: {
+        type: trade.confData.type,
+        config: trade.confData.config,
+      },
     };
     writeFile(filename, JSON.stringify(data));
   }
@@ -119,6 +123,10 @@ export class MarketOrchestrator {
   }
 
   onFlashWick(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
+    if (XX_FOLLOW_BTC_TREND && !this.btcTrendRecorder.trendOk) {
+      this.log('%o - BTC trend not ok', new Date());
+      return;
+    }
     if (!this.watcherInhibiter.has(marketWatcher.getConfLine())) {
       this.watcherInhibiter.add(marketWatcher.getConfLine());
       setTimeout(() => {
@@ -129,10 +137,6 @@ export class MarketOrchestrator {
   }
 
   onNewFlashWick(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
-    if (XX_FOLLOW_BTC_TREND && !this.btcTrendRecorder.trendOk) {
-      this.log('%o - BTC trend not ok', new Date());
-      return;
-    }
     const tradeDriver = new TradeDriver(
       marketWatcher,
       (tradeResult: TradeResult) => {
