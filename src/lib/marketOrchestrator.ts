@@ -1,7 +1,11 @@
 import { format, sub } from 'date-fns';
 import debug from 'debug';
 import { stat, writeFile } from 'fs/promises';
-import { RECORDER_FILE_PATH, XX_FOLLOW_BTC_TREND } from '../config';
+import {
+  MAX_CONCURRENT_TRADES,
+  RECORDER_FILE_PATH,
+  XX_FOLLOW_BTC_TREND,
+} from '../config';
 import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
 import { TradeDriverOpts } from '../types/TradeDriverOpts';
@@ -25,6 +29,7 @@ export class MarketOrchestrator {
   btcTrendRecorder = new BtcTrendRecorder();
   tradePreventIntervalId: NodeJS.Timeout | null = null;
   tradePrevented: boolean = false;
+  maxConcurrentTrades: number = MAX_CONCURRENT_TRADES;
   tradeOpts: TradeDriverOpts;
 
   constructor(
@@ -134,6 +139,14 @@ export class MarketOrchestrator {
       this.log('%o - Trade prevented', new Date());
       return;
     }
+    if (
+      this.maxConcurrentTrades &&
+      this.getConcurrentTradesCount() >= this.maxConcurrentTrades
+    ) {
+      this.log('%o - Max concurrent trades reached', new Date());
+      return;
+    }
+
     if (!this.watcherInhibiter.has(marketWatcher.getConfLine())) {
       this.watcherInhibiter.add(marketWatcher.getConfLine());
       setTimeout(() => {
