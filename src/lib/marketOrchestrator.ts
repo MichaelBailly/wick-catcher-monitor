@@ -1,6 +1,6 @@
 import { format, sub } from 'date-fns';
 import debug from 'debug';
-import { writeFile } from 'fs/promises';
+import { stat, writeFile } from 'fs/promises';
 import { RECORDER_FILE_PATH, XX_FOLLOW_BTC_TREND } from '../config';
 import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
@@ -11,6 +11,7 @@ import { MarketMemoryCollection } from './marketMemoryCollection';
 import { Pnl } from './pnl';
 import { TradeDriver } from './tradeDriver';
 
+const PREVENT_TRADE_FILE = 'prevent_trade';
 const ALIVE_TTL = 30 * 60 * 1000;
 
 export class MarketOrchestrator {
@@ -21,8 +22,10 @@ export class MarketOrchestrator {
   pnl: Pnl = new Pnl();
   collection: MarketMemoryCollection;
   watcherInhibiter: Set<string> = new Set();
-  tradeOpts: TradeDriverOpts;
   btcTrendRecorder = new BtcTrendRecorder();
+  tradePreventIntervalId: NodeJS.Timeout | null = null;
+  tradePrevented: boolean = false;
+  tradeOpts: TradeDriverOpts;
 
   constructor(
     private marketMemoryCollection: MarketMemoryCollection,
@@ -127,6 +130,10 @@ export class MarketOrchestrator {
       this.log('%o - BTC trend not ok', new Date());
       return;
     }
+    if (this.tradePrevented) {
+      this.log('%o - Trade prevented', new Date());
+      return;
+    }
     if (!this.watcherInhibiter.has(marketWatcher.getConfLine())) {
       this.watcherInhibiter.add(marketWatcher.getConfLine());
       setTimeout(() => {
@@ -168,5 +175,23 @@ export class MarketOrchestrator {
       count += tradeDrivers.size;
     }
     return count;
+  }
+
+  async checkForTradesPrevented() {
+    try {
+      await stat(`./${PREVENT_TRADE_FILE}`);
+    } catch (e) {
+      return false;
+    }
+    return true;
+  }
+
+  enableTradePrevent() {
+    if (this.tradePreventIntervalId) {
+      clearInterval(this.tradePreventIntervalId);
+    }
+    this.tradePreventIntervalId = setInterval(async () => {
+      this.tradePrevented = await this.checkForTradesPrevented();
+    }, 1000 * 60 * 30);
   }
 }

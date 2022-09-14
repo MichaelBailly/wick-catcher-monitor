@@ -11,3 +11,9 @@ DEBUG="*,-*:debug" npm run dev
 - MONGO_DB="mongodb://localhost:27017/wicks" : MongoDB connection URI -> https://www.mongodb.com/docs/manual/reference/connection-string/
 - MONGO_TRADE_COLLECTION="trades" : name of MongoDB collection to store trades
 - MONGO_SUMMARY_COLLECTION="summaries" : name of MongoDB collection to store daily summaries
+- STOPLOSS_RATIO="0.85" : percentage down triggering sell
+- TRAILING_RATIO="0.05" : percentage up enabling the sell trailing limit
+
+## Magic files
+
+- **prevent_trade** : do not take any new trade. Checked every 30 minutes

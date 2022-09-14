@@ -47,6 +47,7 @@ export class TradeDriver {
   stopInhibitDelay: number;
   sellAfter: number;
   sellDirect: boolean = false;
+  priceRatio: any;
 
   constructor(
     marketWatcher: MarketWatcher,
@@ -64,6 +65,7 @@ export class TradeDriver {
     this.stopInhibitDelay = opts?.stopInhibitDelay || 0;
     this.sellAfter = opts?.sellAfter || +Infinity;
     this.sellDirect = opts?.sellDirect || false;
+    this.priceRatio = opts?.priceRatio || 1.05;
     this.lastKline = this.history[0];
     this.info = debug(`tradeDriver:${this.pair}:info`);
     this.debug = debug(`tradeDriver:${this.pair}:debug`);
@@ -205,10 +207,12 @@ export class TradeDriver {
       return;
     }
 
-    if (priceRatio >= 1.05) {
-      this.info('Price ratio crossed 1.05');
+    if (priceRatio >= this.priceRatio) {
+      this.info(`Price ratio crossed ${this.priceRatio}`);
       if (this.sellDirect) {
-        this.info('sell trigger. Reason: price ratio crossed 1.05');
+        this.info(
+          `sell trigger. Reason: price ratio crossed ${this.priceRatio}`
+        );
         return this.sell();
       } else {
         this.trailingActivated = true;

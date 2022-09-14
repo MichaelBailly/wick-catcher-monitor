@@ -1,5 +1,10 @@
 import debug from 'debug';
-import { XX_FOLLOW_BTC_TREND, XX_REALTIME_PRICE_WATCH } from './config';
+import {
+  STOPLOSS_RATIO,
+  TRAILING_RATIO,
+  XX_FOLLOW_BTC_TREND,
+  XX_REALTIME_PRICE_WATCH,
+} from './config';
 import { getUsdtPairs } from './exchanges/binance';
 import { MarketMemoryCollection } from './lib/marketMemoryCollection';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
@@ -14,6 +19,8 @@ d('Realtime price watch: %s', XX_REALTIME_PRICE_WATCH);
 const tradeDriverOpts: TradeDriverOpts = {
   sellDirect: false,
   sellAfter: 1000 * 60 * 60,
+  priceRatio: TRAILING_RATIO,
+  stopLossRatio: STOPLOSS_RATIO,
 };
 
 const orchestrators: MarketOrchestrator[] = [];
@@ -63,6 +70,7 @@ async function run() {
   const streams = pairs.map((pair) => `${pair.toLowerCase()}@kline_1m`);
   const streamName = `stream?streams=${streams.join('/')}`;
   start(streamName, orchestrators);
+  orchestrators.forEach((orchestrator) => orchestrator.enableTradePrevent());
 }
 
 run();

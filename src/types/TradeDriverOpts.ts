@@ -5,4 +5,5 @@ export type TradeDriverOpts = {
   trailingLimitRatio?: number;
   sellAfter?: number;
   sellDirect?: boolean;
+  priceRatio?: number;
 };

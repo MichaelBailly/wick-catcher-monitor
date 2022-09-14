@@ -9,3 +9,5 @@ export const MONGO_TRADE_COLLECTION =
   process.env.MONGO_TRADE_COLLECTION || 'trades';
 export const MONGO_SUMMARY_COLLECTION =
   process.env.MONGO_SUMMARY_COLLECTION || 'summaries';
+export const STOPLOSS_RATIO = parseFloat(process.env.STOPLOSS_RATIO || '0.85');
+export const TRAILING_RATIO = parseFloat(process.env.TRAILING_RATIO || '1.05');
