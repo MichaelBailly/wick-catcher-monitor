@@ -1,4 +1,5 @@
 export type BuyTradeInfo = {
+  id: string;
   amount: number;
   quoteAmount: number;
   price: number;

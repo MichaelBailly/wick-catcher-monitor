@@ -1,4 +1,5 @@
 import debug from 'debug';
+import { randomUUID } from 'node:crypto';
 import { BuyTradeInfo } from '../types/BuyTradeInfo';
 import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
@@ -24,6 +25,7 @@ export class TradeDriver {
   highestPrice: number = 0;
   trailingActivated: boolean = false;
   buyTradeinfo: BuyTradeInfo = {
+    id: randomUUID(),
     amount: 0,
     quoteAmount: 0,
     price: 0,

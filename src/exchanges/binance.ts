@@ -20,6 +20,7 @@ export async function getUsdtPairs(): Promise<string[]> {
       symbol.baseAsset !== 'USDP' &&
       symbol.baseAsset !== 'BUSD' &&
       symbol.baseAsset !== 'TUSDT' &&
+      symbol.baseAsset !== 'TUSD' &&
       symbol.baseAsset !== 'USDC' &&
       symbol.baseAsset !== 'BTTC' &&
       symbol.isSpotTradingAllowed
