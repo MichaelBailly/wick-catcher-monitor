@@ -48,6 +48,22 @@ collection.addPriceMarketWatcher({
   flashWickRatio: 1.03,
   realtimeDetection: XX_REALTIME_PRICE_WATCH,
 });
+collection.addPriceMarketWatcher({
+  historySize: 3,
+  flashWickRatio: 1.05,
+  realtimeDetection: XX_REALTIME_PRICE_WATCH,
+});
+collection.addPriceMarketWatcher({
+  historySize: 4,
+  flashWickRatio: 1.05,
+  realtimeDetection: XX_REALTIME_PRICE_WATCH,
+});
+
+collection.addPriceMarketWatcher({
+  historySize: 3,
+  flashWickRatio: 1.04,
+  realtimeDetection: XX_REALTIME_PRICE_WATCH,
+});
 
 collection.addVolumeMarketWatcher({});
 collection.addVolumeMarketWatcher({

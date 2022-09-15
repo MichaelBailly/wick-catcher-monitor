@@ -12,5 +12,5 @@ export const MONGO_SUMMARY_COLLECTION =
 export const STOPLOSS_RATIO = parseFloat(process.env.STOPLOSS_RATIO || '0.85');
 export const TRAILING_RATIO = parseFloat(process.env.TRAILING_RATIO || '1.05');
 export const MAX_CONCURRENT_TRADES = parseInt(
-  process.env.MAX_CONCURRENT_TRADES || '3'
+  process.env.MAX_CONCURRENT_TRADES || '0'
 );

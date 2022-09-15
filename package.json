@@ -9,7 +9,7 @@
     "debug": "bob-tsm --node-env=development --watch=src --inspect src/index.ts",
     "start": "bob-tsm --node-env=prod src/index.ts",
     "build": "ncc build src/index.ts -o dist --target es2020",
-    "upload": "ncc build src/uploader.ts -o dist --target es2020"
+    "upload": "ncc build src/uploader.ts -o dist/uploader --target es2020"
   },
   "author": "",
   "license": "ISC",
