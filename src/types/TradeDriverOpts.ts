@@ -6,4 +6,6 @@ export type TradeDriverOpts = {
   sellAfter?: number;
   sellDirect?: boolean;
   priceRatio?: number;
+  dynamicStopLoss?: number;
+  dynamicStopLossRatio?: number;
 };

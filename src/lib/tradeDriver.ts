@@ -48,6 +48,8 @@ export class TradeDriver {
   sellAfter: number;
   sellDirect: boolean = false;
   priceRatio: any;
+  dynamicStopLoss: number;
+  dynamicStopLossRatio: number;
 
   constructor(
     marketWatcher: MarketWatcher,
@@ -66,6 +68,8 @@ export class TradeDriver {
     this.sellAfter = opts?.sellAfter || +Infinity;
     this.sellDirect = opts?.sellDirect || false;
     this.priceRatio = opts?.priceRatio || 1.05;
+    this.dynamicStopLoss = opts?.dynamicStopLoss || 0;
+    this.dynamicStopLossRatio = opts?.dynamicStopLossRatio || 0.9;
     this.lastKline = this.history[0];
     this.info = debug(`tradeDriver:${this.pair}:info`);
     this.debug = debug(`tradeDriver:${this.pair}:debug`);
@@ -193,6 +197,15 @@ export class TradeDriver {
     }
 
     const priceRatio = msg.close / this.buyTradeinfo.price;
+
+    if (this.dynamicStopLoss > 0 && priceRatio > this.dynamicStopLoss) {
+      this.buyTradeinfo.low =
+        this.buyTradeinfo.price * this.dynamicStopLossRatio;
+      this.info(
+        'dynamic stop loss: adjust stop loss to %d',
+        this.buyTradeinfo.low
+      );
+    }
 
     if (this.trailingActivated) {
       const highestPriceRelative = this.highestPrice / this.buyTradeinfo.price;

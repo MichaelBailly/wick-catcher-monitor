@@ -1,5 +1,7 @@
 import debug from 'debug';
 import {
+  DYNAMIC_STOP_LOSS,
+  DYNAMIC_STOP_LOSS_RATIO,
   STOPLOSS_RATIO,
   TRAILING_RATIO,
   XX_FOLLOW_BTC_TREND,
@@ -21,6 +23,8 @@ const tradeDriverOpts: TradeDriverOpts = {
   sellAfter: 1000 * 60 * 60,
   priceRatio: TRAILING_RATIO,
   stopLossRatio: STOPLOSS_RATIO,
+  dynamicStopLoss: DYNAMIC_STOP_LOSS,
+  dynamicStopLossRatio: DYNAMIC_STOP_LOSS_RATIO,
 };
 
 const orchestrators: MarketOrchestrator[] = [];

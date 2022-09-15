@@ -14,3 +14,18 @@ export const TRAILING_RATIO = parseFloat(process.env.TRAILING_RATIO || '1.05');
 export const MAX_CONCURRENT_TRADES = parseInt(
   process.env.MAX_CONCURRENT_TRADES || '0'
 );
+
+const dsl = (
+  process.env.DYNAMIC_STOP_LOSS && process.env.DYNAMIC_STOP_LOSS.length
+    ? process.env.DYNAMIC_STOP_LOSS.split(' ')
+    : ['0']
+).map((s) => parseFloat(s));
+if (dsl.length === 0) {
+  dsl.push(0);
+}
+if (dsl.length === 1) {
+  dsl.push(0.9);
+}
+
+export const DYNAMIC_STOP_LOSS = dsl[0];
+export const DYNAMIC_STOP_LOSS_RATIO = dsl[1];
