@@ -1,28 +1,38 @@
 import { sub } from 'date-fns';
 import debug, { Debugger } from 'debug';
 import { IKline } from '../../types/IKline';
+import { PriceMarketWatcherOpts } from '../../types/PriceMarketWatcherOpts';
+import { TradeDriverOpts } from '../../types/TradeDriverOpts';
+import { confLine } from './utils';
 
 export class PriceMarketWatcher {
   pair: string;
   d: Debugger;
   e: Debugger;
   /**
-   * Array of 5 last minutes ITicks. 0 is the most recent tick.
+   * @description Array of 5 last minutes ITicks. 0 is the most recent tick.
    */
   minutes: IKline[] = [];
   staleMinute: IKline | null = null;
+  /**
+   * @description Ratio of the candle body to the wick. If the ratio is higher than this value, the candle is considered a flash wick. Ratio can be less than 1, in which case we track wicks going down.
+   * @default 1.1
+   * @example 1.1
+   */
   flashWickRatio: number;
+  /**
+   * @description number of minutes that are buffered
+   */
   historySize: number;
   minutesUpdated: boolean = false;
   realtimeDetection: boolean = false;
+  tradeDriverOpts: TradeDriverOpts;
+  followBtcTrend: boolean = false;
 
   constructor(
     pair: string,
-    opts?: {
-      flashWickRatio?: number;
-      historySize?: number;
-      realtimeDetection?: boolean;
-    }
+    opts?: PriceMarketWatcherOpts,
+    tradeDriverOpts: TradeDriverOpts = {}
   ) {
     this.pair = pair;
     this.d = debug(`lib:PriceMarketWatcher:${this.pair}`);
@@ -30,6 +40,8 @@ export class PriceMarketWatcher {
     this.flashWickRatio = opts?.flashWickRatio || 1.1;
     this.historySize = opts?.historySize !== undefined ? opts.historySize : 5;
     this.realtimeDetection = opts?.realtimeDetection || false;
+    this.followBtcTrend = opts?.followBtcTrend || false;
+    this.tradeDriverOpts = tradeDriverOpts;
   }
 
   onKlineMessage(msg: IKline) {
@@ -92,8 +104,9 @@ export class PriceMarketWatcher {
 
       const pctDiff = current.close / previous.open;
 
-      if (pctDiff > this.flashWickRatio) {
-        return true;
+      const detected = this.isFlashWick(pctDiff, i);
+      if (detected) {
+        return detected;
       }
     }
 
@@ -102,6 +115,10 @@ export class PriceMarketWatcher {
 
   detectFlashWickPerMinute() {
     let detected = false;
+
+    if (!this.staleMinute) {
+      return detected;
+    }
 
     if (!this.minutesUpdated) {
       return detected;
@@ -114,24 +131,45 @@ export class PriceMarketWatcher {
       return detected;
     }
 
-    const current = this.minutes[0];
-    for (let i = 0; i < this.minutes.length; i++) {
-      const previous = this.minutes[i];
+    const minutes = [...this.minutes];
+    if (!minutes.length) {
+      minutes.push(this.staleMinute);
+    }
+    const current = minutes[0];
+    for (let i = 0; i < minutes.length; i++) {
+      const previous = minutes[i];
 
       const pctDiff = current.close / previous.open;
 
-      if (pctDiff > this.flashWickRatio) {
-        this.d(
-          'Flash wick detected: %d in %d minutes - %o',
-          pctDiff,
-          i + 1,
-          new Date()
-        );
-        detected = true;
+      detected = this.isFlashWick(pctDiff, i);
+      if (detected) {
+        break;
       }
     }
 
     return detected;
+  }
+
+  isFlashWick(pctDiff: number, minuteCount: number) {
+    if (this.flashWickRatio > 1 && pctDiff > this.flashWickRatio) {
+      this.d(
+        'Flash wick detected: %d in %d minutes - %o',
+        pctDiff,
+        minuteCount + 1,
+        new Date()
+      );
+      return true;
+    }
+    if (this.flashWickRatio < 1 && pctDiff < this.flashWickRatio) {
+      this.d(
+        'Reverse flash wick detected: %d in %d minutes - %o',
+        pctDiff,
+        minuteCount + 1,
+        new Date()
+      );
+      return true;
+    }
+    return false;
   }
 
   getHistory() {
@@ -139,18 +177,23 @@ export class PriceMarketWatcher {
   }
 
   getConfLine() {
-    return `price-${this.pair}-${this.realtimeDetection ? 'true' : 'false'}-${
-      this.flashWickRatio
-    }-${this.historySize}`;
+    const data = this.getConfData();
+    return `${data.type}-${data.config}`;
   }
 
   getConfData() {
     return {
       type: 'price',
       pair: this.pair,
-      config: `${this.realtimeDetection ? 'true' : 'false'}-${
-        this.flashWickRatio
-      }-${this.historySize}`,
+      config: `${this.realtimeDetection ? 'true' : 'false'},${
+        this.followBtcTrend ? 'true' : 'false'
+      },${this.flashWickRatio},${this.historySize},${confLine(
+        this.tradeDriverOpts
+      )}`,
     };
+  }
+
+  getTradeDriverOpts() {
+    return { ...this.tradeDriverOpts };
   }
 }

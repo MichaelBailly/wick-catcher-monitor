@@ -1,14 +1,9 @@
 import { format, sub } from 'date-fns';
 import debug from 'debug';
 import { stat, writeFile } from 'fs/promises';
-import {
-  MAX_CONCURRENT_TRADES,
-  RECORDER_FILE_PATH,
-  XX_FOLLOW_BTC_TREND,
-} from '../config';
+import { MAX_CONCURRENT_TRADES, RECORDER_FILE_PATH } from '../config';
 import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
-import { TradeDriverOpts } from '../types/TradeDriverOpts';
 import { TradeResult } from '../types/TradeResult';
 import { BtcTrendRecorder } from './BtcTrendRecorder';
 import { MarketMemoryCollection } from './marketMemoryCollection';
@@ -30,18 +25,13 @@ export class MarketOrchestrator {
   tradePreventIntervalId: NodeJS.Timeout | null = null;
   tradePrevented: boolean = false;
   maxConcurrentTrades: number = MAX_CONCURRENT_TRADES;
-  tradeOpts: TradeDriverOpts;
 
-  constructor(
-    private marketMemoryCollection: MarketMemoryCollection,
-    tradeOpts: TradeDriverOpts = {}
-  ) {
+  constructor(private marketMemoryCollection: MarketMemoryCollection) {
     this.collection = marketMemoryCollection;
-    this.tradeOpts = tradeOpts;
   }
 
   onKline(pair: string, msg: IKline) {
-    if (XX_FOLLOW_BTC_TREND && pair === 'BTCUSDT') {
+    if (pair === 'BTCUSDT') {
       this.btcTrendRecorder.onKline(msg);
       return;
     }
@@ -131,7 +121,7 @@ export class MarketOrchestrator {
   }
 
   onFlashWick(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
-    if (XX_FOLLOW_BTC_TREND && !this.btcTrendRecorder.trendOk) {
+    if (marketWatcher.followBtcTrend && !this.btcTrendRecorder.trendOk) {
       this.log('%o - BTC trend not ok', new Date());
       return;
     }
@@ -168,7 +158,7 @@ export class MarketOrchestrator {
         this.pnl.onEndOfTrade(tradeDriver, tradeResult);
         this.log('concurrent trades: %d', this.getConcurrentTradesCount());
       },
-      this.tradeOpts
+      marketWatcher.getTradeDriverOpts()
     );
     tradeDriver.start();
 

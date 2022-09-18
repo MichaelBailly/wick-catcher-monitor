@@ -1,5 +1,8 @@
 import debug, { Debugger } from 'debug';
 import { IKline } from '../../types/IKline';
+import { TradeDriverOpts } from '../../types/TradeDriverOpts';
+import { VolumeMarketWatcherOpts } from '../../types/VolumeMarketWatcherOpts';
+import { confLine } from './utils';
 
 export class VolumeMarketWatcher {
   pair: string;
@@ -14,13 +17,13 @@ export class VolumeMarketWatcher {
   minutesUpdated: boolean = false;
   historySize: number = 45;
   volumeThresholdRatio: number = 40;
+  tradeDriverOpts: TradeDriverOpts;
+  followBtcTrend: boolean = false;
 
   constructor(
     pair: string,
-    opts?: {
-      volumeThresholdRatio?: number;
-      historySize?: number;
-    }
+    opts?: VolumeMarketWatcherOpts,
+    tradeDriverOpts: TradeDriverOpts = {}
   ) {
     this.pair = pair;
     this.d = debug(`lib:VolumeMarketWatcher:${this.pair}`);
@@ -32,6 +35,8 @@ export class VolumeMarketWatcher {
     if (opts?.volumeThresholdRatio) {
       this.volumeThresholdRatio = opts.volumeThresholdRatio;
     }
+    this.followBtcTrend = opts?.followBtcTrend || false;
+    this.tradeDriverOpts = tradeDriverOpts;
   }
 
   onKlineMessage(msg: IKline) {
@@ -83,14 +88,21 @@ export class VolumeMarketWatcher {
   }
 
   getConfLine() {
-    return `volume-${this.pair}-${this.volumeThresholdRatio}-${this.historySize}`;
+    const data = this.getConfData();
+    return `${data.type}-${data.config}`;
   }
 
   getConfData() {
     return {
       type: 'volume',
       pair: this.pair,
-      config: `${this.volumeThresholdRatio}-${this.historySize}`,
+      config: `${this.followBtcTrend ? 'true' : 'false'},${
+        this.volumeThresholdRatio
+      },${this.historySize},${confLine(this.tradeDriverOpts)}`,
     };
+  }
+
+  getTradeDriverOpts() {
+    return { ...this.tradeDriverOpts };
   }
 }

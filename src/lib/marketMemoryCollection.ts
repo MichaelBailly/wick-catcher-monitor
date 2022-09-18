@@ -1,16 +1,13 @@
+import { MarketProfile } from '../types/MarketProfile';
 import { MarketWatcher } from '../types/MarketWatcher';
 import { PriceMarketWatcherOpts } from '../types/PriceMarketWatcherOpts';
+import { TradeDriverOpts } from '../types/TradeDriverOpts';
 import { VolumeMarketWatcherOpts } from '../types/VolumeMarketWatcherOpts';
 import { PriceMarketWatcher } from './marketWatchers/priceMarketWatcher';
 import { VolumeMarketWatcher } from './marketWatchers/volumeMarketWatcher';
 
-type MarketWatcherType = {
-  type: string;
-  opts: PriceMarketWatcherOpts | VolumeMarketWatcherOpts;
-};
-
 export class MarketMemoryCollection {
-  private marketWatcherTypes: Set<MarketWatcherType> = new Set();
+  private marketWatcherTypes: Set<MarketProfile> = new Set();
   private marketWatchers: Map<string, MarketWatcher[]> = new Map();
 
   get(pair: string): MarketWatcher[] {
@@ -20,11 +17,19 @@ export class MarketMemoryCollection {
       for (const marketWatcherType of this.marketWatcherTypes) {
         if (marketWatcherType.type === 'price') {
           watchers.push(
-            new PriceMarketWatcher(pair, { ...marketWatcherType.opts })
+            new PriceMarketWatcher(
+              pair,
+              { ...marketWatcherType.opts },
+              { ...marketWatcherType.tradeDriverOpts }
+            )
           );
         } else if (marketWatcherType.type === 'volume') {
           watchers.push(
-            new VolumeMarketWatcher(pair, { ...marketWatcherType.opts })
+            new VolumeMarketWatcher(
+              pair,
+              { ...marketWatcherType.opts },
+              { ...marketWatcherType.tradeDriverOpts }
+            )
           );
         }
       }
@@ -38,17 +43,25 @@ export class MarketMemoryCollection {
     return marketMemory;
   }
 
-  addPriceMarketWatcher(opts: PriceMarketWatcherOpts) {
+  addPriceMarketWatcher(
+    opts: PriceMarketWatcherOpts,
+    tradeDriverOpts: TradeDriverOpts = {}
+  ) {
     this.marketWatcherTypes.add({
       type: 'price',
       opts: { ...opts },
+      tradeDriverOpts,
     });
   }
 
-  addVolumeMarketWatcher(opts: VolumeMarketWatcherOpts) {
+  addVolumeMarketWatcher(
+    opts: VolumeMarketWatcherOpts,
+    tradeDriverOpts: TradeDriverOpts = {}
+  ) {
     this.marketWatcherTypes.add({
       type: 'volume',
       opts: { ...opts },
+      tradeDriverOpts,
     });
   }
 }

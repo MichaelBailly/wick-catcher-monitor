@@ -1,5 +1,4 @@
 import pThrottle from 'p-throttle';
-import { XX_FOLLOW_BTC_TREND } from '../config';
 import { IKline } from '../types/IKline';
 
 const throttled = pThrottle({
@@ -26,9 +25,6 @@ export async function getUsdtPairs(): Promise<string[]> {
       symbol.isSpotTradingAllowed
   );
 
-  if (!XX_FOLLOW_BTC_TREND) {
-    pairs = pairs.filter((symbol: any) => symbol.baseAsset !== 'BTC');
-  }
   return pairs.map((pair: any) => pair.symbol);
 }
 export async function getLastDaysCandlesInternal(
