@@ -65,7 +65,7 @@ export class TradeDriver {
     this.stopLossRatio = opts?.stopLossRatio || 0.98;
     this.trailingLimitRatio = opts?.trailingLimitRatio || 0.85;
     this.stopInhibitDelay = opts?.stopInhibitDelay || 0;
-    this.sellAfter = opts?.sellAfter || +Infinity;
+    this.sellAfter = opts?.sellAfter || 1000 * 60 * 60;
     this.sellDirect = opts?.sellDirect || false;
     this.priceRatio = opts?.priceRatio || 1.05;
     this.dynamicStopLoss = opts?.dynamicStopLoss || 0;
