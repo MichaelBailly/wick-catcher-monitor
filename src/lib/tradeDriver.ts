@@ -199,12 +199,15 @@ export class TradeDriver {
     const priceRatio = msg.close / this.buyTradeinfo.price;
 
     if (this.dynamicStopLoss > 0 && priceRatio > this.dynamicStopLoss) {
-      this.buyTradeinfo.low =
-        this.buyTradeinfo.price * this.dynamicStopLossRatio;
-      this.info(
-        'dynamic stop loss: adjust stop loss to %d',
-        this.buyTradeinfo.low
-      );
+      const newLow = this.buyTradeinfo.price * this.dynamicStopLossRatio;
+      if (newLow > this.buyTradeinfo.low) {
+        this.buyTradeinfo.low =
+          this.buyTradeinfo.price * this.dynamicStopLossRatio;
+        this.info(
+          'dynamic stop loss: adjust stop loss to %d',
+          this.buyTradeinfo.low
+        );
+      }
     }
 
     if (this.trailingActivated) {
