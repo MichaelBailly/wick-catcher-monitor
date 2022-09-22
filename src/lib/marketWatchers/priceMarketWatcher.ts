@@ -13,6 +13,20 @@ export class PriceMarketWatcher {
    * @description Array of 5 last minutes ITicks. 0 is the most recent tick.
    */
   minutes: IKline[] = [];
+
+  /**
+   * @description a longer term history. Sampled every 5 minutes
+   */
+  longTermHistory: IKline[] = [];
+
+  /**
+   * @description amount of time between 2 samples in long history
+   */
+  longTermHistorySample: number = 1000 * 60 * 5;
+
+  /**
+   * @description The current Kline (last one received from server)
+   */
   staleMinute: IKline | null = null;
   /**
    * @description Ratio of the candle body to the wick. If the ratio is higher than this value, the candle is considered a flash wick. Ratio can be less than 1, in which case we track wicks going down.
@@ -24,10 +38,27 @@ export class PriceMarketWatcher {
    * @description number of minutes that are buffered
    */
   historySize: number;
+  /**
+   * @description whether we are at the start of a new minute. Happens once per minute
+   */
   minutesUpdated: boolean = false;
+  /**
+   * @description if true, comparisons and thresholds are computed on each new message from server. If false, computed once per minute, at the beginning of the new minute
+   */
   realtimeDetection: boolean = false;
+  /**
+   * @description options that will be passed to the tradeDriver
+   */
   tradeDriverOpts: TradeDriverOpts;
+  /**
+   * @description do not send wick detected if BTC trend is down
+   */
   followBtcTrend: boolean = false;
+
+  /**
+   * @description in milliseconds. In case the watcher is to detect a reverse flash wick, it will compare the current price with the price a long time ago to know if the wick is the price going down, or the fall of an up spike
+   */
+  reverseHistorySize: number = 1000 * 60 * 60;
 
   constructor(
     pair: string,
@@ -44,10 +75,29 @@ export class PriceMarketWatcher {
     this.tradeDriverOpts = tradeDriverOpts;
   }
 
+  updateReverseHistory(msg: IKline) {
+    const HISTORY_SAMPLE = 1000 * 60 * 5; // 5 minutes
+    if (!this.longTermHistory.length) {
+      this.longTermHistory.unshift(msg);
+    } else if (msg.start - this.longTermHistory[0].start > HISTORY_SAMPLE) {
+      this.longTermHistory.unshift(msg);
+      if (this.longTermHistory.length > this.reverseHistoryItemCount()) {
+        this.longTermHistory.pop();
+      }
+    }
+  }
+
+  reverseHistoryItemCount() {
+    return Math.floor(this.reverseHistorySize / this.longTermHistorySample);
+  }
+
   onKlineMessage(msg: IKline) {
     if (msg.interval !== '1m') {
       this.d('Interval not supported "%s"', msg.interval);
       return;
+    }
+    if (this.flashWickRatio < 1) {
+      this.updateReverseHistory(msg);
     }
     if (this.staleMinute === null || this.staleMinute.end > msg.start) {
       this.staleMinute = { ...msg };
@@ -160,7 +210,11 @@ export class PriceMarketWatcher {
       );
       return true;
     }
-    if (this.flashWickRatio < 1 && pctDiff < this.flashWickRatio) {
+    if (
+      this.flashWickRatio < 1 &&
+      pctDiff < this.flashWickRatio &&
+      this.isPriceOkForReverseFlashWick()
+    ) {
       this.d(
         'Reverse flash wick detected: %d in %d minutes - %o',
         pctDiff,
@@ -170,6 +224,23 @@ export class PriceMarketWatcher {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Check if the price is ok for a reverse flash wick, meaning price now is lower than price X long ago (default 1 hour)
+   *
+   * @returns boolean whether this reverse flash wick is really reverse
+   */
+  isPriceOkForReverseFlashWick() {
+    if (
+      this.longTermHistory.length < this.reverseHistoryItemCount() ||
+      !this.staleMinute
+    ) {
+      return false;
+    }
+    const previous = this.longTermHistory[this.longTermHistory.length - 1];
+    const current = this.staleMinute;
+    return current.close < previous.close;
   }
 
   getHistory() {
