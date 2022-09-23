@@ -61,9 +61,9 @@ async function run() {
       opts: { ...w.opts },
       tradeDriverOpts: { ...w.tradeDriverOpts },
     };
-    w5.opts.followBtcTrend = true;
-    w5.tradeDriverOpts.dynamicStopLoss = 1.03;
-    w5.tradeDriverOpts.dynamicStopLossRatio = 0.9;
+    w6.opts.followBtcTrend = true;
+    w6.tradeDriverOpts.dynamicStopLoss = 1.03;
+    w6.tradeDriverOpts.dynamicStopLossRatio = 0.9;
     watchers.push(w6);
 
     const w7 = {
@@ -71,7 +71,7 @@ async function run() {
       opts: { ...w.opts },
       tradeDriverOpts: { ...w.tradeDriverOpts },
     };
-    w5.opts.followBtcTrend = true;
+    w7.opts.followBtcTrend = true;
     watchers.push(w7);
   });
 

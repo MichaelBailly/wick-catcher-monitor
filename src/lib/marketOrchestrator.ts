@@ -18,6 +18,7 @@ export class MarketOrchestrator {
   aliveTimestamp: number = Date.now() + ALIVE_TTL;
   tradeDrivers: Map<string, Set<TradeDriver>> = new Map();
   log: debug.Debugger = debug('marketOrchestrator');
+  debug: debug.Debugger = debug('marketOrchestrator:debug');
   pnl: Pnl = new Pnl();
   collection: MarketMemoryCollection;
   watcherInhibiter: Set<string> = new Set();
@@ -47,7 +48,7 @@ export class MarketOrchestrator {
       if (marketWatcher.detectFlashWick()) {
         const trades = this.tradeDrivers.get(pair);
         if (!trades || trades.size === 0) {
-          this.log(
+          this.debug(
             '%o flash wick detected on %s',
             new Date(),
             marketWatcher.getConfLine()
@@ -122,11 +123,11 @@ export class MarketOrchestrator {
 
   onFlashWick(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
     if (marketWatcher.followBtcTrend && !this.btcTrendRecorder.trendOk) {
-      this.log('%o - BTC trend not ok', new Date());
+      this.debug('%o - BTC trend not ok', new Date());
       return;
     }
     if (this.tradePrevented) {
-      this.log('%o - Trade prevented', new Date());
+      this.debug('%o - Trade prevented', new Date());
       return;
     }
     if (
