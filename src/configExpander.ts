@@ -25,6 +25,7 @@ async function run() {
     };
     w2.opts.realtimeDetection = true;
     watchers.push(w2);
+
     const w3 = {
       type: w.type,
       opts: { ...w.opts },
@@ -54,6 +55,24 @@ async function run() {
     w5.tradeDriverOpts.dynamicStopLoss = 1.03;
     w5.tradeDriverOpts.dynamicStopLossRatio = 0.9;
     watchers.push(w5);
+
+    const w6 = {
+      type: w.type,
+      opts: { ...w.opts },
+      tradeDriverOpts: { ...w.tradeDriverOpts },
+    };
+    w5.opts.followBtcTrend = true;
+    w5.tradeDriverOpts.dynamicStopLoss = 1.03;
+    w5.tradeDriverOpts.dynamicStopLossRatio = 0.9;
+    watchers.push(w6);
+
+    const w7 = {
+      type: w.type,
+      opts: { ...w.opts },
+      tradeDriverOpts: { ...w.tradeDriverOpts },
+    };
+    w5.opts.followBtcTrend = true;
+    watchers.push(w7);
   });
 
   const config = { ...configTemplate, watchers };

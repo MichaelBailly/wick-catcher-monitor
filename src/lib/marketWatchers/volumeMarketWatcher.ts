@@ -1,3 +1,4 @@
+import { sub } from 'date-fns';
 import debug, { Debugger } from 'debug';
 import { IKline } from '../../types/IKline';
 import { TradeDriverOpts } from '../../types/TradeDriverOpts';
@@ -10,15 +11,26 @@ export class VolumeMarketWatcher {
   e: Debugger;
   staleMinute: IKline | null = null;
   /**
-   * Array of 5 last minutes ITicks. 0 is the most recent tick.
+   * @description Array of 5 last minutes ITicks. 0 is the most recent tick.
    */
   minutes: IKline[] = [];
+  /**
+   * @description minimum ratio for the current candle
+   */
+  minRatioOnVolumeCandle: number = 1.015;
   maxVolume: number = 0;
   minutesUpdated: boolean = false;
+  /**
+   * @description number of minutes that are buffered
+   */
   historySize: number = 45;
   volumeThresholdRatio: number = 40;
   tradeDriverOpts: TradeDriverOpts;
   followBtcTrend: boolean = false;
+  /**
+   * @description if true, comparisons and thresholds are computed on each new message from server. If false, computed once per minute, at the beginning of the new minute
+   */
+  realtimeDetection: boolean = false;
 
   constructor(
     pair: string,
@@ -35,6 +47,7 @@ export class VolumeMarketWatcher {
     if (opts?.volumeThresholdRatio) {
       this.volumeThresholdRatio = opts.volumeThresholdRatio;
     }
+    this.realtimeDetection = opts?.realtimeDetection || false;
     this.followBtcTrend = opts?.followBtcTrend || false;
     this.tradeDriverOpts = tradeDriverOpts;
   }
@@ -55,7 +68,61 @@ export class VolumeMarketWatcher {
     }
   }
 
+  isConcurrentMinutes() {
+    for (let i = 0; i < this.minutes.length - 1; i++) {
+      const current = this.minutes[i];
+      const previous = this.minutes[i + 1];
+
+      const startDate = new Date(current.start);
+      if (sub(startDate, { minutes: 1 }).getTime() !== previous.start) {
+        this.e('Minutes are not concurrent');
+        return false;
+      }
+    }
+    return true;
+  }
+
   detectFlashWick(): boolean {
+    if (this.realtimeDetection) {
+      return this.detectFlashWickRealTime();
+    } else {
+      return this.detectFlashWickPerMinute();
+    }
+  }
+
+  detectFlashWickRealTime(): boolean {
+    if (!this.staleMinute) {
+      return false;
+    }
+
+    if (this.minutes.length < this.historySize) {
+      return false;
+    }
+    if (!this.isConcurrentMinutes()) {
+      return false;
+    }
+
+    const current = this.staleMinute;
+
+    // ensure that current is a positive candle
+    if (current.close / current.open < this.minRatioOnVolumeCandle) {
+      return false;
+    }
+
+    if (this.maxVolume * this.volumeThresholdRatio < current.volume) {
+      this.d(
+        'Flash Wick detected, average volume: %d, current volume: %d - %s',
+        this.maxVolume,
+        current.volume,
+        new Date().toISOString()
+      );
+      return true;
+    }
+
+    return false;
+  }
+
+  detectFlashWickPerMinute(): boolean {
     let detected = false;
 
     if (this.minutes.length < this.historySize) {
@@ -96,9 +163,11 @@ export class VolumeMarketWatcher {
     return {
       type: 'volume',
       pair: this.pair,
-      config: `${this.followBtcTrend ? 'true' : 'false'},${
-        this.volumeThresholdRatio
-      },${this.historySize},${confLine(this.tradeDriverOpts)}`,
+      config: `${this.realtimeDetection ? 'true' : 'false'},${
+        this.followBtcTrend ? 'true' : 'false'
+      },${this.volumeThresholdRatio},${this.historySize},${confLine(
+        this.tradeDriverOpts
+      )}`,
     };
   }
 
