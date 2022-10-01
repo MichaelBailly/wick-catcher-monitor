@@ -6,6 +6,5 @@ export type TradeInfo = {
   buyTimestamp: number;
   boughtTimestamp: number;
   sellTimestamp: number;
-  soldTimestamp: number;
   low: number;
 };

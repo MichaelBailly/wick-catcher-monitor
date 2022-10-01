@@ -32,7 +32,6 @@ export class TradeDriver {
     buyTimestamp: 0,
     boughtTimestamp: 0,
     sellTimestamp: 0,
-    soldTimestamp: 0,
     low: 0,
   };
   soldCallback: (trade: TradeResult) => void;
@@ -88,7 +87,7 @@ export class TradeDriver {
       return;
     }
     this.state = TradeState.BUY;
-    this.info('%s - buy - %s', new Date().toISOString(), this.confLine);
+    this.info('%o - buy - %s', new Date(), this.confLine);
     this.buyTradeinfo.buyTimestamp = Date.now();
     setTimeout(() => {
       this.state = TradeState.BOUGHT;
@@ -99,8 +98,8 @@ export class TradeDriver {
   onBought(quoteAmount: number, price: number) {
     const amount = quoteAmount / price;
     this.info(
-      '%s - Bought %s price:%d amount:%d quoteAmount:%d',
-      new Date().toISOString(),
+      '%o - Bought %s price:%d amount:%d quoteAmount:%d',
+      new Date(),
       this.pair,
       price,
       amount,
@@ -116,7 +115,7 @@ export class TradeDriver {
     };
 
     this.sellTimeoutId = setTimeout(() => {
-      this.info('%s - sell trigger. Reason: timeout', new Date().toISOString());
+      this.info('%o - sell trigger. Reason: timeout', new Date());
       this.sell();
     }, 1000 * 60 * 60);
   }
@@ -127,8 +126,8 @@ export class TradeDriver {
     }
     this.state = TradeState.SELL;
     this.info(
-      '%s - sell. current price=%d - %s',
-      new Date().toISOString(),
+      '%o - sell. current price=%d - %s',
+      new Date(),
       this.lastKline.close,
       this.confLine
     );
@@ -147,14 +146,13 @@ export class TradeDriver {
   onSold(amount: number, price: number) {
     const quoteAmount = amount * price;
     this.info(
-      '%s - Sold %s %d %d %d',
-      new Date().toISOString(),
+      '%o - Sold %s %d %d %d',
+      new Date(),
       this.pair,
       price,
       amount,
       quoteAmount
     );
-    this.buyTradeinfo.soldTimestamp = Date.now();
     const pnl = quoteAmount - this.buyTradeinfo.quoteAmount;
     this.info('trade pnl:', pnl);
     const tradeResult: TradeResult = {
@@ -162,6 +160,7 @@ export class TradeDriver {
       pair: this.pair,
       soldAmount: amount,
       soldPrice: price,
+      soldTimestamp: Date.now(),
     };
     this.soldCallback(tradeResult);
   }
