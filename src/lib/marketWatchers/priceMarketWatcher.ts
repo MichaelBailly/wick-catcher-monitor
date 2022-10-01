@@ -60,6 +60,11 @@ export class PriceMarketWatcher {
    */
   reverseHistorySize: number = 1000 * 60 * 60;
 
+  /**
+   * @description a string representing the configuration of the watcher
+   */
+  configLine: string;
+
   constructor(
     pair: string,
     opts?: PriceMarketWatcherOpts,
@@ -73,6 +78,11 @@ export class PriceMarketWatcher {
     this.realtimeDetection = opts?.realtimeDetection || false;
     this.followBtcTrend = opts?.followBtcTrend || false;
     this.tradeDriverOpts = tradeDriverOpts;
+    this.configLine = `${this.realtimeDetection ? 'true' : 'false'},${
+      this.followBtcTrend ? 'true' : 'false'
+    },${this.flashWickRatio},${this.historySize},${confLine(
+      this.tradeDriverOpts
+    )}`;
   }
 
   updateReverseHistory(msg: IKline) {
@@ -256,11 +266,7 @@ export class PriceMarketWatcher {
     return {
       type: 'price',
       pair: this.pair,
-      config: `${this.realtimeDetection ? 'true' : 'false'},${
-        this.followBtcTrend ? 'true' : 'false'
-      },${this.flashWickRatio},${this.historySize},${confLine(
-        this.tradeDriverOpts
-      )}`,
+      config: this.configLine,
     };
   }
 

@@ -32,6 +32,11 @@ export class VolumeMarketWatcher {
    */
   realtimeDetection: boolean = false;
 
+  /**
+   * @description a string representing the configuration of the watcher
+   */
+  configLine: string;
+
   constructor(
     pair: string,
     opts?: VolumeMarketWatcherOpts,
@@ -50,6 +55,11 @@ export class VolumeMarketWatcher {
     this.realtimeDetection = opts?.realtimeDetection || false;
     this.followBtcTrend = opts?.followBtcTrend || false;
     this.tradeDriverOpts = tradeDriverOpts;
+    this.configLine = `${this.realtimeDetection ? 'true' : 'false'},${
+      this.followBtcTrend ? 'true' : 'false'
+    },${this.volumeThresholdRatio},${this.historySize},${confLine(
+      this.tradeDriverOpts
+    )}`;
   }
 
   onKlineMessage(msg: IKline) {
@@ -163,11 +173,7 @@ export class VolumeMarketWatcher {
     return {
       type: 'volume',
       pair: this.pair,
-      config: `${this.realtimeDetection ? 'true' : 'false'},${
-        this.followBtcTrend ? 'true' : 'false'
-      },${this.volumeThresholdRatio},${this.historySize},${confLine(
-        this.tradeDriverOpts
-      )}`,
+      config: this.configLine,
     };
   }
 
