@@ -29,3 +29,6 @@ if (dsl.length === 1) {
 
 export const DYNAMIC_STOP_LOSS = dsl[0];
 export const DYNAMIC_STOP_LOSS_RATIO = dsl[1];
+
+export const BINANCE_KEY = process.env.BINANCE_KEY || null;
+export const BINANCE_SECRET = process.env.BINANCE_SECRET || null;
