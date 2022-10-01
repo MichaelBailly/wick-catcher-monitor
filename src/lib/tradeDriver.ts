@@ -1,10 +1,10 @@
 import debug from 'debug';
 import { randomUUID } from 'node:crypto';
-import { BuyTradeInfo } from '../types/BuyTradeInfo';
 import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
 import { MarketWatcherConfData } from '../types/MarketWatcherConfData';
 import { TradeDriverOpts } from '../types/TradeDriverOpts';
+import { TradeInfo } from '../types/TradeInfo';
 import { TradeResult } from '../types/TradeResult';
 
 enum TradeState {
@@ -24,7 +24,7 @@ export class TradeDriver {
   lastKline: IKline;
   highestPrice: number = 0;
   trailingActivated: boolean = false;
-  buyTradeinfo: BuyTradeInfo = {
+  buyTradeinfo: TradeInfo = {
     id: randomUUID(),
     amount: 0,
     quoteAmount: 0,

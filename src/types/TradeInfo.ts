@@ -1,4 +1,4 @@
-export type BuyTradeInfo = {
+export type TradeInfo = {
   id: string;
   amount: number;
   quoteAmount: number;
