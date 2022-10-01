@@ -24,7 +24,7 @@ export class TradeDriver {
   lastKline: IKline;
   highestPrice: number = 0;
   trailingActivated: boolean = false;
-  buyTradeinfo: TradeInfo = {
+  tradeInfo: TradeInfo = {
     id: randomUUID(),
     amount: 0,
     quoteAmount: 0,
@@ -88,7 +88,7 @@ export class TradeDriver {
     }
     this.state = TradeState.BUY;
     this.info('%o - buy - %s', new Date(), this.confLine);
-    this.buyTradeinfo.buyTimestamp = Date.now();
+    this.tradeInfo.buyTimestamp = Date.now();
     setTimeout(() => {
       this.state = TradeState.BOUGHT;
       this.onBought(this.quoteAmount, this.lastKline.close);
@@ -105,8 +105,8 @@ export class TradeDriver {
       amount,
       quoteAmount
     );
-    this.buyTradeinfo = {
-      ...this.buyTradeinfo,
+    this.tradeInfo = {
+      ...this.tradeInfo,
       amount,
       quoteAmount,
       price,
@@ -131,10 +131,10 @@ export class TradeDriver {
       this.lastKline.close,
       this.confLine
     );
-    this.buyTradeinfo.sellTimestamp = Date.now();
+    this.tradeInfo.sellTimestamp = Date.now();
     setTimeout(() => {
       this.state = TradeState.SOLD;
-      this.onSold(this.buyTradeinfo.amount, this.lastKline.close);
+      this.onSold(this.tradeInfo.amount, this.lastKline.close);
     }, 3000);
 
     if (this.sellTimeoutId !== null) {
@@ -153,10 +153,10 @@ export class TradeDriver {
       amount,
       quoteAmount
     );
-    const pnl = quoteAmount - this.buyTradeinfo.quoteAmount;
+    const pnl = quoteAmount - this.tradeInfo.quoteAmount;
     this.info('trade pnl:', pnl);
     const tradeResult: TradeResult = {
-      ...this.buyTradeinfo,
+      ...this.tradeInfo,
       pair: this.pair,
       soldAmount: amount,
       soldPrice: price,
@@ -176,45 +176,41 @@ export class TradeDriver {
       this.highestPrice = msg.close;
     }
 
-    if (this.buyTradeinfo.boughtTimestamp + this.sellAfter < Date.now()) {
+    if (this.tradeInfo.boughtTimestamp + this.sellAfter < Date.now()) {
       this.info('sell trigger. Reason: sellAfter reached');
       return this.sell();
     }
 
-    if (
-      this.buyTradeinfo.boughtTimestamp >=
-      Date.now() - this.stopInhibitDelay
-    ) {
-      if (msg.close < this.buyTradeinfo.low) {
+    if (this.tradeInfo.boughtTimestamp >= Date.now() - this.stopInhibitDelay) {
+      if (msg.close < this.tradeInfo.low) {
         this.info('sell trigger. Reason: price below low (stop loss)');
         return this.sell();
       }
     }
 
-    if (msg.close < this.buyTradeinfo.price) {
+    if (msg.close < this.tradeInfo.price) {
       return;
     }
 
-    const priceRatio = msg.close / this.buyTradeinfo.price;
+    const priceRatio = msg.close / this.tradeInfo.price;
 
     if (this.dynamicStopLoss > 0 && priceRatio > this.dynamicStopLoss) {
-      const newLow = this.buyTradeinfo.price * this.dynamicStopLossRatio;
-      if (newLow > this.buyTradeinfo.low) {
-        this.buyTradeinfo.low =
-          this.buyTradeinfo.price * this.dynamicStopLossRatio;
+      const newLow = this.tradeInfo.price * this.dynamicStopLossRatio;
+      if (newLow > this.tradeInfo.low) {
+        this.tradeInfo.low = this.tradeInfo.price * this.dynamicStopLossRatio;
         this.info(
           'dynamic stop loss: adjust stop loss to %d',
-          this.buyTradeinfo.low
+          this.tradeInfo.low
         );
       }
     }
 
     if (this.trailingActivated) {
-      const highestPriceRelative = this.highestPrice / this.buyTradeinfo.price;
+      const highestPriceRelative = this.highestPrice / this.tradeInfo.price;
       const trailingLimit =
         highestPriceRelative === 0
           ? +Infinity
-          : (msg.close - this.buyTradeinfo.price) / highestPriceRelative;
+          : (msg.close - this.tradeInfo.price) / highestPriceRelative;
       if (trailingLimit < this.trailingLimitRatio) {
         this.info('sell trigger. Reason: price dropped below trailing limit');
         return this.sell();
