@@ -1,6 +1,6 @@
 import debug from 'debug';
 import { readFile } from 'node:fs/promises';
-import { getUsdtPairs } from './exchanges/binance';
+import { init as initBinance } from './exchanges/binance';
 import { MarketMemoryCollection } from './lib/marketMemoryCollection';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
 import { MarketProfile } from './types/MarketProfile';
@@ -27,79 +27,12 @@ async function setupEnv() {
     }
   });
 
-  /*
-  collection.addPriceMarketWatcher({
-    flashWickRatio: 1.1,
-    realtimeDetection: XX_REALTIME_PRICE_WATCH,
-  });
-  collection.addPriceMarketWatcher({
-    flashWickRatio: 1.075,
-    realtimeDetection: XX_REALTIME_PRICE_WATCH,
-  });
-  collection.addPriceMarketWatcher({
-    flashWickRatio: 1.055,
-    realtimeDetection: XX_REALTIME_PRICE_WATCH,
-  });
-  collection.addPriceMarketWatcher({
-    historySize: 3,
-    flashWickRatio: 1.055,
-    realtimeDetection: XX_REALTIME_PRICE_WATCH,
-  });
-  collection.addPriceMarketWatcher({
-    historySize: 0,
-    flashWickRatio: 1.03,
-    realtimeDetection: XX_REALTIME_PRICE_WATCH,
-  });
-  collection.addPriceMarketWatcher({
-    historySize: 3,
-    flashWickRatio: 1.05,
-    realtimeDetection: XX_REALTIME_PRICE_WATCH,
-  });
-  collection.addPriceMarketWatcher({
-    historySize: 4,
-    flashWickRatio: 1.05,
-    realtimeDetection: XX_REALTIME_PRICE_WATCH,
-  });
-
-  collection.addPriceMarketWatcher({
-    historySize: 3,
-    flashWickRatio: 1.04,
-    realtimeDetection: XX_REALTIME_PRICE_WATCH,
-  });
-  collection.addPriceMarketWatcher({
-    historySize: 3,
-    flashWickRatio: 0.95,
-    realtimeDetection: XX_REALTIME_PRICE_WATCH,
-  });
-  collection.addPriceMarketWatcher({
-    historySize: 3,
-    flashWickRatio: 0.96,
-    realtimeDetection: XX_REALTIME_PRICE_WATCH,
-  });
-  collection.addPriceMarketWatcher({
-    historySize: 3,
-    flashWickRatio: 0.97,
-    realtimeDetection: XX_REALTIME_PRICE_WATCH,
-  });
-
-  collection.addVolumeMarketWatcher({});
-  collection.addVolumeMarketWatcher({
-    volumeThresholdRatio: 60,
-  });
-  collection.addVolumeMarketWatcher({
-    volumeThresholdRatio: 90,
-  });
-  collection.addVolumeMarketWatcher({
-    volumeThresholdRatio: 30,
-  });
-*/
   const orchestrator = new MarketOrchestrator(collection);
-
   orchestrators.push(orchestrator);
 }
 
 async function run() {
-  const pairs = await getUsdtPairs();
+  const pairs = await initBinance();
   d('%d pairs', pairs.length);
   const streams = pairs.map((pair) => `${pair.toLowerCase()}@kline_1m`);
   const streamName = `stream?streams=${streams.join('/')}`;

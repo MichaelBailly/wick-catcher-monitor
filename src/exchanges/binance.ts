@@ -1,4 +1,10 @@
+import { createHmac } from 'crypto';
+import querystring from 'node:querystring';
 import pThrottle from 'p-throttle';
+import { BINANCE_KEY, BINANCE_SECRET } from '../config';
+import { isBinanceExchangeResponse } from '../types/BinanceExchangeResponse';
+import { isBinanceOrderResponse } from '../types/BinanceOrderResponse';
+import { BinanceSymbol } from '../types/BinanceSymbol';
 import { IKline } from '../types/IKline';
 
 const throttled = pThrottle({
@@ -6,11 +12,17 @@ const throttled = pThrottle({
   interval: 3000,
 });
 
-export async function getUsdtPairs(): Promise<string[]> {
+let symbols: BinanceSymbol[] = [];
+
+export async function init(): Promise<string[]> {
   const url = 'https://api.binance.com/api/v3/exchangeInfo';
   const response = await fetch(url);
   const data = await response.json();
-  let pairs = data.symbols.filter(
+  if (!isBinanceExchangeResponse(data)) {
+    throw new Error('Invalid response from Binance');
+  }
+
+  symbols = data.symbols.filter(
     (symbol: any) =>
       symbol.quoteAsset === 'USDT' &&
       symbol.baseAsset !== 'USDT' &&
@@ -25,8 +37,9 @@ export async function getUsdtPairs(): Promise<string[]> {
       symbol.isSpotTradingAllowed
   );
 
-  return pairs.map((pair: any) => pair.symbol);
+  return symbols.map((pair: any) => pair.symbol);
 }
+
 export async function getLastDaysCandlesInternal(
   pair: string,
   days: number = 2
@@ -56,3 +69,70 @@ export async function getLastDaysCandlesInternal(
 }
 
 export const getLastDaysCandles = throttled(getLastDaysCandlesInternal);
+
+function createQueryString(params = {}) {
+  if (BINANCE_SECRET === null) {
+    throw new Error('Binance secret is not set');
+  }
+  const params2 = { ...params, timestamp: Date.now(), recvWindow: 5000 };
+  const qs = querystring.stringify(params2);
+
+  const signature = createHmac('sha256', BINANCE_SECRET)
+    .update(qs)
+    .digest('hex');
+  const url = `${qs}&signature=${signature}`;
+  return url;
+}
+
+type CreateOrderOpts = {
+  quoteOrderQty?: number;
+  quantity?: number;
+};
+
+async function createOrder(pair: string, side: string, opts: CreateOrderOpts) {
+  if (BINANCE_KEY === null) {
+    throw new Error('Binance key is not set');
+  }
+  if (!opts.quoteOrderQty && !opts.quantity) {
+    throw new Error('quoteOrderQty or quantity is required');
+  }
+
+  const tradeData = createQueryString({
+    symbol: pair,
+    side: side,
+    type: 'MARKET',
+    ...opts,
+  });
+
+  const tradeRequest = new Request(
+    `https://api.binance.com/api/v3/order?${tradeData}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-MBX-APIKEY': BINANCE_KEY,
+        'User-Agent': `Mozilla/Firefox`,
+      },
+    }
+  );
+
+  try {
+    const response = await fetch(tradeRequest);
+    const data = await response.json();
+    console.log(data);
+    if (!isBinanceOrderResponse(data)) {
+      throw new Error('Invalid response from Binance');
+    }
+    return data;
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export async function buy(pair: string, quoteOrderQty: number) {
+  return createOrder(pair, 'BUY', { quoteOrderQty });
+}
+
+export async function sell(pair: string, quantity: number) {
+  return createOrder(pair, 'SELL', { quantity });
+}
