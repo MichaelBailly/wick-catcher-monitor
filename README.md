@@ -18,6 +18,8 @@ DEBUG="*,-*:debug" npm run dev
 - RECORDER_FILE_PATH="/tmp" : folder to write trade and daily summary files
 - MONGO_DB="mongodb://localhost:27017/wicks" : MongoDB connection URI -> https://www.mongodb.com/docs/manual/reference/connection-string/
 - MONGO_TRADE_COLLECTION="trades" : name of MongoDB collection to store trades
+- MONGO_REFERENCES_DB="mongodb://localhost:2707/references" : MongoDB connection URI of references database
+- MONGO_VOLUME_COLLECTION="volume" : name of volume collection
 
 ## Magic files
 

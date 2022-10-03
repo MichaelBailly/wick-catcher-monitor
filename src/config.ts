@@ -7,6 +7,10 @@ export const MONGO_DB =
   process.env.MONGO_DB || 'mongodb://localhost:27017/wicks';
 export const MONGO_TRADE_COLLECTION =
   process.env.MONGO_TRADE_COLLECTION || 'trades';
+export const MONGO_REFERENCES_DB =
+  process.env.MONGO_REFERENCES_DB || 'mongodb://localhost:27017/references';
+export const MONGO_VOLUME_COLLECTION =
+  process.env.MONGO_VOLUME_COLLECTION || 'volume';
 export const STOPLOSS_RATIO = parseFloat(process.env.STOPLOSS_RATIO || '0.85');
 export const TRAILING_RATIO = parseFloat(process.env.TRAILING_RATIO || '1.05');
 export const MAX_CONCURRENT_TRADES = parseInt(
