@@ -9,6 +9,7 @@ import { BtcTrendRecorder } from './BtcTrendRecorder';
 import { MarketMemoryCollection } from './marketMemoryCollection';
 import { Pnl } from './pnl';
 import { TradeDriver } from './tradeDriver';
+import { getVolumeFamily } from './volume/volumeReference';
 
 const PREVENT_TRADE_FILE = 'prevent_trade';
 const ALIVE_TTL = 30 * 60 * 1000;
@@ -97,8 +98,10 @@ export class MarketOrchestrator {
       new Date(),
       'yyyyMMddHHmm'
     )}.json`;
+    const volumeFamily = getVolumeFamily(tradeResult.pair) || 'unknown';
     const data = {
       ...tradeResult,
+      volumeFamily,
       watcher: {
         type: trade.confData.type,
         config: trade.confData.config,

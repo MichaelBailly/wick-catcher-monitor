@@ -12,6 +12,7 @@ export type TradeRecord = {
   soldTimestamp: Date;
   low: number;
   pair: string;
+  volumeFamily: string;
   soldAmount: number;
   soldPrice: number;
   pnl: number;

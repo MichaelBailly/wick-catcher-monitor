@@ -22,7 +22,7 @@
     "date-fns": "^2.29.2",
     "debug": "^4.3.4",
     "glob-all": "^3.3.0",
-    "mongodb": "^4.9.1",
+    "mongodb": "^4.10.0",
     "p-throttle": "^5.0.0",
     "ts-json-schema-generator": "^1.0.0",
     "ws": "^8.8.1"
