@@ -3,4 +3,5 @@ export type PriceMarketWatcherOpts = {
   historySize?: number;
   realtimeDetection?: boolean;
   followBtcTrend?: boolean;
+  volumeFamilies?: string[];
 };

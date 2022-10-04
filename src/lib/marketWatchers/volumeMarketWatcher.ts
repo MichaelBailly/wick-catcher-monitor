@@ -3,6 +3,7 @@ import debug, { Debugger } from 'debug';
 import { IKline } from '../../types/IKline';
 import { TradeDriverOpts } from '../../types/TradeDriverOpts';
 import { VolumeMarketWatcherOpts } from '../../types/VolumeMarketWatcherOpts';
+import { getVolumeFamily } from '../volume/volumeReference';
 import { confLine } from './utils';
 
 export class VolumeMarketWatcher {
@@ -33,6 +34,11 @@ export class VolumeMarketWatcher {
   realtimeDetection: boolean = false;
 
   /**
+   * @description limit type of pair to enable depending on its volume. Empty array means all pairs are enabled
+   */
+  volumeFamilies: string[];
+
+  /**
    * @description a string representing the configuration of the watcher
    */
   configLine: string;
@@ -55,11 +61,15 @@ export class VolumeMarketWatcher {
     this.realtimeDetection = opts?.realtimeDetection || false;
     this.followBtcTrend = opts?.followBtcTrend || false;
     this.tradeDriverOpts = tradeDriverOpts;
+    this.volumeFamilies = opts?.volumeFamilies || [];
     this.configLine = `${this.realtimeDetection ? 'true' : 'false'},${
       this.followBtcTrend ? 'true' : 'false'
     },${this.volumeThresholdRatio},${this.historySize},${confLine(
       this.tradeDriverOpts
     )}`;
+    if (this.volumeFamilies.length) {
+      this.configLine += `,${this.volumeFamilies.join('-')}`;
+    }
   }
 
   onKlineMessage(msg: IKline) {
@@ -93,6 +103,12 @@ export class VolumeMarketWatcher {
   }
 
   detectFlashWick(): boolean {
+    if (
+      this.volumeFamilies.length &&
+      !this.volumeFamilies.includes(getVolumeFamily(this.pair) || '')
+    ) {
+      return false;
+    }
     if (this.realtimeDetection) {
       return this.detectFlashWickRealTime();
     } else {

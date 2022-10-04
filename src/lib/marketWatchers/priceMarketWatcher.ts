@@ -3,6 +3,7 @@ import debug, { Debugger } from 'debug';
 import { IKline } from '../../types/IKline';
 import { PriceMarketWatcherOpts } from '../../types/PriceMarketWatcherOpts';
 import { TradeDriverOpts } from '../../types/TradeDriverOpts';
+import { getVolumeFamily } from '../volume/volumeReference';
 import { confLine } from './utils';
 
 export class PriceMarketWatcher {
@@ -61,6 +62,11 @@ export class PriceMarketWatcher {
   reverseHistorySize: number = 1000 * 60 * 60;
 
   /**
+   * @description limit type of pair to enable depending on its volume. Empty array means all pairs are enabled
+   */
+  volumeFamilies: string[];
+
+  /**
    * @description a string representing the configuration of the watcher
    */
   configLine: string;
@@ -78,11 +84,15 @@ export class PriceMarketWatcher {
     this.realtimeDetection = opts?.realtimeDetection || false;
     this.followBtcTrend = opts?.followBtcTrend || false;
     this.tradeDriverOpts = tradeDriverOpts;
+    this.volumeFamilies = opts?.volumeFamilies || [];
     this.configLine = `${this.realtimeDetection ? 'true' : 'false'},${
       this.followBtcTrend ? 'true' : 'false'
     },${this.flashWickRatio},${this.historySize},${confLine(
       this.tradeDriverOpts
     )}`;
+    if (this.volumeFamilies.length) {
+      this.configLine += `,${this.volumeFamilies.join('-')}`;
+    }
   }
 
   updateReverseHistory(msg: IKline) {
@@ -138,6 +148,12 @@ export class PriceMarketWatcher {
   }
 
   detectFlashWick() {
+    if (
+      this.volumeFamilies.length &&
+      !this.volumeFamilies.includes(getVolumeFamily(this.pair) || '')
+    ) {
+      return false;
+    }
     return this.realtimeDetection
       ? this.detectFlashWickRealTime()
       : this.detectFlashWickPerMinute();

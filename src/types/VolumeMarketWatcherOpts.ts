@@ -3,4 +3,5 @@ export type VolumeMarketWatcherOpts = {
   volumeThresholdRatio?: number;
   realtimeDetection?: boolean;
   followBtcTrend?: boolean;
+  volumeFamilies?: string[];
 };
