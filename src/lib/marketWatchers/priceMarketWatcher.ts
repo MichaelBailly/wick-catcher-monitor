@@ -3,6 +3,7 @@ import debug, { Debugger } from 'debug';
 import { IKline } from '../../types/IKline';
 import { PriceMarketWatcherOpts } from '../../types/PriceMarketWatcherOpts';
 import { TradeDriverOpts } from '../../types/TradeDriverOpts';
+import { BtcTrendRecorder, getBtcTrendRecorder } from '../BtcTrendRecorder';
 import { getVolumeFamily } from '../volume/volumeReference';
 import { confLine } from './utils';
 
@@ -29,6 +30,12 @@ export class PriceMarketWatcher {
    * @description The current Kline (last one received from server)
    */
   staleMinute: IKline | null = null;
+
+  /**
+   * @description btc trend telling whether BTC is currently going up or down
+   */
+  btcTrendRecorder: BtcTrendRecorder | null = null;
+
   /**
    * @description Ratio of the candle body to the wick. If the ratio is higher than this value, the candle is considered a flash wick. Ratio can be less than 1, in which case we track wicks going down.
    * @default 1.1
@@ -54,7 +61,7 @@ export class PriceMarketWatcher {
   /**
    * @description do not send wick detected if BTC trend is down
    */
-  followBtcTrend: boolean = false;
+  followBtcTrend: boolean | number = false;
 
   /**
    * @description in milliseconds. In case the watcher is to detect a reverse flash wick, it will compare the current price with the price a long time ago to know if the wick is the price going down, or the fall of an up spike
@@ -85,13 +92,25 @@ export class PriceMarketWatcher {
     this.followBtcTrend = opts?.followBtcTrend || false;
     this.tradeDriverOpts = tradeDriverOpts;
     this.volumeFamilies = opts?.volumeFamilies || [];
-    this.configLine = `${this.realtimeDetection ? 'true' : 'false'},${
-      this.followBtcTrend ? 'true' : 'false'
-    },${this.flashWickRatio},${this.historySize},${confLine(
+    const fbtString =
+      this.followBtcTrend === true
+        ? 'true'
+        : this.followBtcTrend === false
+        ? 'false'
+        : this.followBtcTrend;
+    this.configLine = `${
+      this.realtimeDetection ? 'true' : 'false'
+    },${fbtString},${this.flashWickRatio},${this.historySize},${confLine(
       this.tradeDriverOpts
     )}`;
     if (this.volumeFamilies.length) {
       this.configLine += `,${this.volumeFamilies.join('-')}`;
+    }
+
+    if (this.followBtcTrend === true) {
+      this.btcTrendRecorder = getBtcTrendRecorder();
+    } else if (typeof this.followBtcTrend === 'number') {
+      this.btcTrendRecorder = getBtcTrendRecorder(this.followBtcTrend);
     }
   }
 
@@ -154,6 +173,10 @@ export class PriceMarketWatcher {
     ) {
       return false;
     }
+    if (this.btcTrendRecorder && !this.btcTrendRecorder.isTrendOk()) {
+      return false;
+    }
+
     return this.realtimeDetection
       ? this.detectFlashWickRealTime()
       : this.detectFlashWickPerMinute();

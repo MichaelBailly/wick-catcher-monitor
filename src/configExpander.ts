@@ -73,6 +73,36 @@ async function run() {
     };
     w7.opts.followBtcTrend = true;
     watchers.push(w7);
+
+    const w8 = {
+      type: w.type,
+      opts: { ...w.opts },
+      tradeDriverOpts: { ...w.tradeDriverOpts },
+    };
+    w8.opts.followBtcTrend = 60;
+    w8.tradeDriverOpts.dynamicStopLoss = 1.03;
+    w8.tradeDriverOpts.dynamicStopLossRatio = 0.9;
+    watchers.push(w8);
+
+    const w9 = {
+      type: w.type,
+      opts: { ...w.opts },
+      tradeDriverOpts: { ...w.tradeDriverOpts },
+    };
+    w9.opts.followBtcTrend = 120;
+    w9.tradeDriverOpts.dynamicStopLoss = 1.03;
+    w9.tradeDriverOpts.dynamicStopLossRatio = 0.9;
+    watchers.push(w9);
+
+    const w10 = {
+      type: w.type,
+      opts: { ...w.opts },
+      tradeDriverOpts: { ...w.tradeDriverOpts },
+    };
+    w10.opts.followBtcTrend = 240;
+    w10.tradeDriverOpts.dynamicStopLoss = 1.03;
+    w10.tradeDriverOpts.dynamicStopLossRatio = 0.9;
+    watchers.push(w10);
   });
 
   const config = { ...configTemplate, watchers };

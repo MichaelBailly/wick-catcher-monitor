@@ -8,7 +8,7 @@ export type MarketWatcher = {
   e: debug.Debugger;
   minutes: IKline[];
   historySize: number;
-  followBtcTrend: boolean;
+  followBtcTrend: boolean | number;
   onKlineMessage: (msg: IKline) => void;
   detectFlashWick: () => boolean;
   getHistory: () => IKline[];

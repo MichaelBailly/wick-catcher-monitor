@@ -3,6 +3,7 @@ import debug, { Debugger } from 'debug';
 import { IKline } from '../../types/IKline';
 import { TradeDriverOpts } from '../../types/TradeDriverOpts';
 import { VolumeMarketWatcherOpts } from '../../types/VolumeMarketWatcherOpts';
+import { BtcTrendRecorder, getBtcTrendRecorder } from '../BtcTrendRecorder';
 import { getVolumeFamily } from '../volume/volumeReference';
 import { confLine } from './utils';
 
@@ -15,6 +16,12 @@ export class VolumeMarketWatcher {
    * @description Array of 5 last minutes ITicks. 0 is the most recent tick.
    */
   minutes: IKline[] = [];
+
+  /**
+   * @description btc trend telling whether BTC is currently going up or down
+   */
+  btcTrendRecorder: BtcTrendRecorder | null = null;
+
   /**
    * @description minimum ratio for the current candle
    */
@@ -27,7 +34,7 @@ export class VolumeMarketWatcher {
   historySize: number = 45;
   volumeThresholdRatio: number = 40;
   tradeDriverOpts: TradeDriverOpts;
-  followBtcTrend: boolean = false;
+  followBtcTrend: boolean | number = false;
   /**
    * @description if true, comparisons and thresholds are computed on each new message from server. If false, computed once per minute, at the beginning of the new minute
    */
@@ -62,13 +69,25 @@ export class VolumeMarketWatcher {
     this.followBtcTrend = opts?.followBtcTrend || false;
     this.tradeDriverOpts = tradeDriverOpts;
     this.volumeFamilies = opts?.volumeFamilies || [];
-    this.configLine = `${this.realtimeDetection ? 'true' : 'false'},${
-      this.followBtcTrend ? 'true' : 'false'
-    },${this.volumeThresholdRatio},${this.historySize},${confLine(
+    const fbtString =
+      this.followBtcTrend === true
+        ? 'true'
+        : this.followBtcTrend === false
+        ? 'false'
+        : this.followBtcTrend;
+    this.configLine = `${
+      this.realtimeDetection ? 'true' : 'false'
+    },${fbtString},${this.volumeThresholdRatio},${this.historySize},${confLine(
       this.tradeDriverOpts
     )}`;
     if (this.volumeFamilies.length) {
       this.configLine += `,${this.volumeFamilies.join('-')}`;
+    }
+
+    if (this.followBtcTrend === true) {
+      this.btcTrendRecorder = getBtcTrendRecorder();
+    } else if (typeof this.followBtcTrend === 'number') {
+      this.btcTrendRecorder = getBtcTrendRecorder(this.followBtcTrend);
     }
   }
 
@@ -109,6 +128,10 @@ export class VolumeMarketWatcher {
     ) {
       return false;
     }
+    if (this.btcTrendRecorder && !this.btcTrendRecorder.isTrendOk()) {
+      return false;
+    }
+
     if (this.realtimeDetection) {
       return this.detectFlashWickRealTime();
     } else {
