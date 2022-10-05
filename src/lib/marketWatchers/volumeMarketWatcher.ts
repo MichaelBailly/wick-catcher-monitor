@@ -159,12 +159,6 @@ export class VolumeMarketWatcher {
     }
 
     if (this.maxVolume * this.volumeThresholdRatio < current.volume) {
-      this.d(
-        'Flash Wick detected, average volume: %d, current volume: %d - %s',
-        this.maxVolume,
-        current.volume,
-        new Date().toISOString()
-      );
       return true;
     }
 
@@ -188,12 +182,6 @@ export class VolumeMarketWatcher {
     }
 
     if (this.maxVolume * this.volumeThresholdRatio < this.staleMinute.volume) {
-      this.d(
-        'Flash Wick detected, average volume: %d, current volume: %d - %s',
-        this.maxVolume,
-        this.staleMinute.volume,
-        new Date().toISOString()
-      );
       return true;
     }
     return detected;
