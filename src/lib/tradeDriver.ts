@@ -1,11 +1,15 @@
 import debug from 'debug';
 import { randomUUID } from 'node:crypto';
+import { BINANCE_KEY, BINANCE_SECRET } from '../config';
+import { BinanceOrderResponse } from '../types/BinanceOrderResponse';
 import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
 import { MarketWatcherConfData } from '../types/MarketWatcherConfData';
+import { SimulationResponse } from '../types/SimulationResponse';
 import { TradeDriverOpts } from '../types/TradeDriverOpts';
 import { TradeInfo } from '../types/TradeInfo';
 import { TradeResult } from '../types/TradeResult';
+import { buy, sell } from './tradeDriverTransaction';
 
 enum TradeState {
   NONE,
@@ -15,12 +19,29 @@ enum TradeState {
   SOLD,
 }
 
+const simulationPromise = async (
+  driver: TradeDriver
+): Promise<{
+  price: number;
+}> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        price: driver.lastKline.close,
+      });
+    }, 3000);
+  });
+};
+
 export class TradeDriver {
   pair: string;
   history: IKline[];
   confLine: string;
   confData: MarketWatcherConfData;
   state: TradeState = TradeState.NONE;
+  /**
+   * @description Most recent kline entry. Also used by tradeDriverTransaction
+   */
   lastKline: IKline;
   highestPrice: number = 0;
   trailingActivated: boolean = false;
@@ -39,7 +60,19 @@ export class TradeDriver {
   debug: debug.Debugger;
   error: debug.Debugger;
   sellTimeoutId: NodeJS.Timeout | null = null;
+  isProduction: boolean = BINANCE_KEY && BINANCE_SECRET ? true : false;
+  simulation: SimulationResponse = {
+    quoteAmount: 0,
+    price: 0,
+    soldAmount: 0,
+    soldPrice: 0,
+  };
+  binanceBuyTransaction: BinanceOrderResponse | null = null;
+  binanceSellTransaction: BinanceOrderResponse | null = null;
 
+  /**
+   * @description number of $ to buy. Used by tradeDriverTransaction
+   */
   quoteAmount: number;
   stopLossRatio: number;
   trailingLimitRatio: number;
@@ -82,20 +115,44 @@ export class TradeDriver {
     this.buy();
   }
 
-  buy() {
+  async buy() {
     if (this.state !== TradeState.NONE) {
       return;
     }
+
     this.state = TradeState.BUY;
     this.info('%o - buy - %s', new Date(), this.confLine);
     this.tradeInfo.buyTimestamp = Date.now();
-    setTimeout(() => {
-      this.state = TradeState.BOUGHT;
-      this.onBought(this.quoteAmount, this.lastKline.close);
-    }, 3000);
+
+    if (!this.isProduction) {
+      const { price } = await simulationPromise(this);
+      this.onBought(this.quoteAmount, price, Date.now());
+    } else {
+      const [exchangeResponse, simulationResponse] = await Promise.all([
+        buy(this),
+        simulationPromise(this),
+      ]);
+
+      this.simulation.quoteAmount = this.quoteAmount;
+      this.simulation.price = simulationResponse.price;
+      this.binanceBuyTransaction = exchangeResponse.response;
+      this.onBought(
+        exchangeResponse.executedQuoteAmount,
+        exchangeResponse.price,
+        exchangeResponse.doneTimestamp
+      );
+    }
   }
 
-  onBought(quoteAmount: number, price: number) {
+  onBought(
+    quoteAmount: number,
+    price: number,
+    boughtTimestamp: number = Date.now()
+  ) {
+    if (this.state !== TradeState.BUY) {
+      return;
+    }
+    this.state = TradeState.BOUGHT;
     const amount = quoteAmount / price;
     this.info(
       '%o - Bought %s price:%d amount:%d quoteAmount:%d',
@@ -110,7 +167,7 @@ export class TradeDriver {
       amount,
       quoteAmount,
       price,
-      boughtTimestamp: Date.now(),
+      boughtTimestamp,
       low: price * this.stopLossRatio,
     };
 
@@ -120,7 +177,7 @@ export class TradeDriver {
     }, 1000 * 60 * 60);
   }
 
-  sell() {
+  async sell() {
     if (this.state !== TradeState.BOUGHT) {
       return;
     }
@@ -132,10 +189,25 @@ export class TradeDriver {
       this.confLine
     );
     this.tradeInfo.sellTimestamp = Date.now();
-    setTimeout(() => {
-      this.state = TradeState.SOLD;
-      this.onSold(this.tradeInfo.amount, this.lastKline.close);
-    }, 3000);
+
+    if (!this.isProduction) {
+      const { price } = await simulationPromise(this);
+      this.onSold(this.tradeInfo.amount, price, Date.now());
+    } else {
+      const [exchangeResponse, simulationResponse] = await Promise.all([
+        sell(this),
+        simulationPromise(this),
+      ]);
+
+      this.simulation.soldAmount = this.tradeInfo.amount;
+      this.simulation.price = simulationResponse.price;
+      this.binanceBuyTransaction = exchangeResponse.response;
+      this.onSold(
+        exchangeResponse.amount,
+        exchangeResponse.price,
+        exchangeResponse.doneTimestamp
+      );
+    }
 
     if (this.sellTimeoutId !== null) {
       clearTimeout(this.sellTimeoutId);
@@ -143,7 +215,11 @@ export class TradeDriver {
     }
   }
 
-  onSold(amount: number, price: number) {
+  onSold(amount: number, price: number, soldTimestamp: number = Date.now()) {
+    if (this.state !== TradeState.SELL) {
+      return;
+    }
+    this.state = TradeState.SOLD;
     const quoteAmount = amount * price;
     this.info(
       '%o - Sold %s %d %d %d',
@@ -160,8 +236,19 @@ export class TradeDriver {
       pair: this.pair,
       soldAmount: amount,
       soldPrice: price,
-      soldTimestamp: Date.now(),
+      soldTimestamp,
     };
+    if (
+      this.isProduction &&
+      this.binanceBuyTransaction &&
+      this.binanceSellTransaction
+    ) {
+      tradeResult.details = {
+        simulation: this.simulation,
+        buyTransaction: this.binanceBuyTransaction,
+        sellTransaction: this.binanceSellTransaction,
+      };
+    }
     this.soldCallback(tradeResult);
   }
 

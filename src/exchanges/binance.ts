@@ -89,7 +89,19 @@ type CreateOrderOpts = {
   quantity?: number;
 };
 
+export class BinanceTransactionError extends Error {
+  response: Response;
+  constructor(message: string, response: Response) {
+    super(message);
+    Object.setPrototypeOf(this, BinanceTransactionError.prototype);
+
+    this.name = 'BinanceTransactionError';
+    this.response = response;
+  }
+}
+
 async function createOrder(pair: string, side: string, opts: CreateOrderOpts) {
+  let response;
   if (BINANCE_KEY === null) {
     throw new Error('Binance key is not set');
   }
@@ -115,18 +127,16 @@ async function createOrder(pair: string, side: string, opts: CreateOrderOpts) {
       },
     }
   );
-
-  try {
-    const response = await fetch(tradeRequest);
-    const data = await response.json();
-    console.log(data);
-    if (!isBinanceOrderResponse(data)) {
-      throw new Error('Invalid response from Binance');
-    }
-    return data;
-  } catch (e) {
-    console.log(e);
+  response = await fetch(tradeRequest);
+  const data = await response.json();
+  console.log(data);
+  if (!isBinanceOrderResponse(data)) {
+    throw new BinanceTransactionError(
+      'Invalid response from Binance',
+      response
+    );
   }
+  return data;
 }
 
 export async function buy(pair: string, quoteOrderQty: number) {

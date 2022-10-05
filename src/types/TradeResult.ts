@@ -1,3 +1,5 @@
+import { BinanceOrderResponse } from './BinanceOrderResponse';
+import { SimulationResponse } from './SimulationResponse';
 import { TradeInfo } from './TradeInfo';
 
 export type TradeResult = TradeInfo & {
@@ -5,4 +7,9 @@ export type TradeResult = TradeInfo & {
   soldTimestamp: number;
   soldAmount: number;
   soldPrice: number;
+  details?: {
+    simulation: SimulationResponse;
+    buyTransaction: BinanceOrderResponse;
+    sellTransaction: BinanceOrderResponse;
+  };
 };
