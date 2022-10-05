@@ -251,12 +251,6 @@ export class PriceMarketWatcher {
 
   isFlashWick(pctDiff: number, minuteCount: number) {
     if (this.flashWickRatio > 1 && pctDiff > this.flashWickRatio) {
-      this.d(
-        'Flash wick detected: %d in %d minutes - %o',
-        pctDiff,
-        minuteCount + 1,
-        new Date()
-      );
       return true;
     }
     if (
@@ -264,12 +258,6 @@ export class PriceMarketWatcher {
       pctDiff < this.flashWickRatio &&
       this.isPriceOkForReverseFlashWick()
     ) {
-      this.d(
-        'Reverse flash wick detected: %d in %d minutes - %o',
-        pctDiff,
-        minuteCount + 1,
-        new Date()
-      );
       return true;
     }
     return false;
