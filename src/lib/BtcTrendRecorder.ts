@@ -47,7 +47,7 @@ export class BtcTrendRecorder {
     }
   }
 
-  isTrendOk(): boolean {
+  private isTrendOk(): boolean {
     if (!this.history.length) {
       return false;
     }
