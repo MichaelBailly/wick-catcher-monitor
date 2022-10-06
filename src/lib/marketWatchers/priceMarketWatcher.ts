@@ -249,7 +249,7 @@ export class PriceMarketWatcher {
     return detected;
   }
 
-  isFlashWick(pctDiff: number, minuteCount: number) {
+  isFlashWick(pctDiff: number, _: number) {
     if (this.flashWickRatio > 1 && pctDiff > this.flashWickRatio) {
       return true;
     }
