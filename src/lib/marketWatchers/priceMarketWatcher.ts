@@ -173,7 +173,7 @@ export class PriceMarketWatcher {
     ) {
       return false;
     }
-    if (this.btcTrendRecorder && !this.btcTrendRecorder.isTrendOk()) {
+    if (this.btcTrendRecorder && !this.btcTrendRecorder.trendOk) {
       return false;
     }
 
