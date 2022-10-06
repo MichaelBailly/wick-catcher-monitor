@@ -57,18 +57,15 @@ class SocketClient {
         const handlerMessage: BinanceWebSocketKlineMessage = JSON.parse(
           msg.data
         );
-        if (
-          handlerMessage.data.e &&
-          this._handlers.has(handlerMessage.data.e)
-        ) {
-          const _handlers = this._handlers.get(handlerMessage.data.e);
-          if (Array.isArray(_handlers)) {
-            _handlers.forEach((cb: Function) => {
-              cb(handlerMessage);
-            });
-          }
-        } else {
+
+        if (!handlerMessage.data.e) {
           d('Unknown method');
+          return;
+        }
+
+        const _handlers = this._handlers.get(handlerMessage.data.e) || [];
+        for (const handler of _handlers) {
+          handler(handlerMessage);
         }
       } catch (e) {
         d('Parse message failed %O', e);

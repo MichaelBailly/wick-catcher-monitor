@@ -14,9 +14,9 @@ export function start(streamName: string, orchestrators: MarketOrchestrator[]) {
     const pair = params.data.s;
     const interval = params.stream.split('_').pop() || 'unknown';
     const ikline: IKline = { ...binanceKlineMessageToITick(params), interval };
-    orchestrators.forEach((orchestrator) => {
+    for (const orchestrator of orchestrators) {
       orchestrator.onKline(pair, ikline);
-    });
+    }
   });
 
   socketClient.start();
