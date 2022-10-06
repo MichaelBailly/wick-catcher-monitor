@@ -1,4 +1,4 @@
-import { format, sub } from 'date-fns';
+import { format } from 'date-fns';
 import debug from 'debug';
 import { stat, writeFile } from 'fs/promises';
 import { MAX_CONCURRENT_TRADES, RECORDER_FILE_PATH } from '../config';
@@ -71,20 +71,14 @@ export class MarketOrchestrator {
   aliveHook() {
     this.aliveCount++;
     if (Date.now() > this.aliveTimestamp) {
-      const hour = format(new Date(), 'H');
+      const summaryString = this.pnl.getSummary();
+
       this.log(
         '%so - Still alive, %d messages processed',
         new Date(),
         this.aliveCount
       );
-      this.log('%d concurrent trades', this.getConcurrentTradesCount());
-      let summaryString = '';
-      if (hour === '0') {
-        summaryString = this.pnl.getFullSummary();
-        this.recordDailySummary(summaryString);
-      } else {
-        summaryString = this.pnl.getSummary();
-      }
+      this.log('concurrent trades: %d', this.getConcurrentTradesCount());
       this.log(summaryString);
       this.log('------------------------------------------------------');
       this.aliveTimestamp = Date.now() + ALIVE_TTL;
@@ -109,43 +103,37 @@ export class MarketOrchestrator {
     writeFile(filename, JSON.stringify(data));
   }
 
-  recordDailySummary(summary: string) {
-    const filename = `${RECORDER_FILE_PATH}/summary.txt`;
-    writeFile(filename, summary);
-
-    const yesterday = format(sub(new Date(), { days: 1 }), 'yyyy-MM-dd');
-
-    const filename2 = `${RECORDER_FILE_PATH}/summary-${yesterday}.json`;
-    const body = {
-      date: yesterday,
-      summary: this.pnl.getDailySummary(yesterday),
-    };
-    writeFile(filename2, JSON.stringify(body));
-  }
-
   onFlashWick(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
     if (this.tradePrevented) {
       this.debug('%o - Trade prevented', new Date());
       return;
     }
-    if (
-      this.maxConcurrentTrades &&
-      this.getConcurrentTradesCount() >= this.maxConcurrentTrades
-    ) {
+    if (this.getConcurrentTradesCount() >= this.maxConcurrentTrades) {
       this.log('%o - Max concurrent trades reached', new Date());
       return;
     }
-
-    if (!this.watcherInhibiter.has(marketWatcher.getConfLine())) {
-      this.watcherInhibiter.add(marketWatcher.getConfLine());
-      setTimeout(() => {
-        this.watcherInhibiter.delete(marketWatcher.getConfLine());
-      }, 1000 * 60 * 60);
-      this.onNewFlashWick(marketWatcher, pair, msg);
+    if (!this.setWatcherInhibiter(marketWatcher)) {
+      return;
     }
+
+    this.launchTrade(marketWatcher, pair, msg);
   }
 
-  onNewFlashWick(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
+  setWatcherInhibiter(marketWatcher: MarketWatcher) {
+    const confLine = marketWatcher.getConfLine();
+    if (this.watcherInhibiter.has(confLine)) {
+      return false;
+    }
+
+    this.watcherInhibiter.add(confLine);
+    setTimeout(() => {
+      this.watcherInhibiter.delete(confLine);
+    }, 1000 * 60 * 60);
+
+    return true;
+  }
+
+  launchTrade(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
     const onEndOfTrade = (tradeResult: TradeResult) => {
       this.removeFromTradeDriverSet(pair, tradeDriver);
       this.recordTradeSummary(tradeDriver, tradeResult);

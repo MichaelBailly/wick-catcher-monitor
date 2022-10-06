@@ -34,6 +34,8 @@ export async function init(): Promise<string[]> {
       symbol.baseAsset !== 'TUSD' &&
       symbol.baseAsset !== 'USDC' &&
       symbol.baseAsset !== 'BTTC' &&
+      !/\w+UP$/.test(symbol.baseAsset) &&
+      !/\w+DOWN$/.test(symbol.baseAsset) &&
       symbol.isSpotTradingAllowed
   );
 

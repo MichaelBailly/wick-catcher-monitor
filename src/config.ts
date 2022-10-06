@@ -13,9 +13,14 @@ export const MONGO_VOLUME_COLLECTION =
   process.env.MONGO_VOLUME_COLLECTION || 'volume';
 export const STOPLOSS_RATIO = parseFloat(process.env.STOPLOSS_RATIO || '0.85');
 export const TRAILING_RATIO = parseFloat(process.env.TRAILING_RATIO || '1.05');
-export const MAX_CONCURRENT_TRADES = parseInt(
-  process.env.MAX_CONCURRENT_TRADES || '0'
-);
+
+let maxConcurrentTrades;
+if (process.env.MAX_CONCURRENT_TRADES) {
+  maxConcurrentTrades = parseInt(process.env.MAX_CONCURRENT_TRADES);
+} else {
+  maxConcurrentTrades = +Infinity;
+}
+export const MAX_CONCURRENT_TRADES = maxConcurrentTrades;
 
 const dsl = (
   process.env.DYNAMIC_STOP_LOSS && process.env.DYNAMIC_STOP_LOSS.length
