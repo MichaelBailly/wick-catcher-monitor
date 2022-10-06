@@ -46,14 +46,6 @@ export class MarketOrchestrator {
     for (const marketWatcher of marketWatchers) {
       marketWatcher.onKlineMessage(msg);
       if (marketWatcher.detectFlashWick()) {
-        const trades = this.tradeDrivers.get(pair);
-        if (!trades || trades.size === 0) {
-          this.debug(
-            '%o flash wick detected on %s',
-            new Date(),
-            marketWatcher.getConfLine()
-          );
-        }
         this.onFlashWick(marketWatcher, pair, msg);
       }
     }
@@ -120,7 +112,7 @@ export class MarketOrchestrator {
   }
 
   setWatcherInhibiter(marketWatcher: MarketWatcher) {
-    const confLine = marketWatcher.getConfLine();
+    const confLine = `${marketWatcher.pair}/${marketWatcher.getConfLine()}`;
     if (this.watcherInhibiter.has(confLine)) {
       return false;
     }
