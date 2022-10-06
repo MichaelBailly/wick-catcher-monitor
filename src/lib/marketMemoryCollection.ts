@@ -11,12 +11,13 @@ export class MarketMemoryCollection {
   private marketWatchers: Map<string, MarketWatcher[]> = new Map();
 
   get(pair: string): MarketWatcher[] {
-    if (!this.marketWatchers.has(pair)) {
-      const watchers = [];
+    let marketWatchers = this.marketWatchers.get(pair);
+    if (!marketWatchers) {
+      marketWatchers = [];
 
       for (const marketWatcherType of this.marketWatcherTypes) {
         if (marketWatcherType.type === 'price') {
-          watchers.push(
+          marketWatchers.push(
             new PriceMarketWatcher(
               pair,
               { ...marketWatcherType.opts },
@@ -24,7 +25,7 @@ export class MarketMemoryCollection {
             )
           );
         } else if (marketWatcherType.type === 'volume') {
-          watchers.push(
+          marketWatchers.push(
             new VolumeMarketWatcher(
               pair,
               { ...marketWatcherType.opts },
@@ -33,14 +34,10 @@ export class MarketMemoryCollection {
           );
         }
       }
-      this.marketWatchers.set(pair, watchers);
+      this.marketWatchers.set(pair, marketWatchers);
     }
-    const marketMemory = this.marketWatchers.get(pair);
-    // to satisfy TS...
-    if (marketMemory === undefined) {
-      throw new Error('MarketMemoryCollection.get() returned undefined');
-    }
-    return marketMemory;
+
+    return marketWatchers;
   }
 
   addPriceMarketWatcher(

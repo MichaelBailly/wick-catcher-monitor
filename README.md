@@ -23,4 +23,4 @@ DEBUG="*,-*:debug" npm run dev
 
 ## Magic files
 
-- **prevent_trade** : do not take any new trade. Checked every 30 minutes
+- **prevent_trade** : do not take any new trade. Checked every 5 minutes

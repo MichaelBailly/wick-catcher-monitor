@@ -146,29 +146,38 @@ export class MarketOrchestrator {
   }
 
   onNewFlashWick(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
+    const onEndOfTrade = (tradeResult: TradeResult) => {
+      this.removeFromTradeDriverSet(pair, tradeDriver);
+      this.recordTradeSummary(tradeDriver, tradeResult);
+      this.pnl.onEndOfTrade(tradeDriver, tradeResult);
+      this.log('concurrent trades: %d', this.getConcurrentTradesCount());
+    };
+
     const tradeDriver = new TradeDriver(
       marketWatcher,
-      (tradeResult: TradeResult) => {
-        const tradeDrivers = this.tradeDrivers.get(pair);
-        if (tradeDrivers) {
-          tradeDrivers.delete(tradeDriver);
-          this.recordTradeSummary(tradeDriver, tradeResult);
-        }
-        this.pnl.onEndOfTrade(tradeDriver, tradeResult);
-        this.log('concurrent trades: %d', this.getConcurrentTradesCount());
-      },
+      onEndOfTrade,
       marketWatcher.getTradeDriverOpts()
     );
     tradeDriver.start();
 
+    this.addToTradeDriverSet(pair, tradeDriver);
+    this.log('concurrent trades: %d', this.getConcurrentTradesCount());
+  }
+
+  removeFromTradeDriverSet(pair: string, tradeDriver: TradeDriver) {
+    const tradeDrivers = this.tradeDrivers.get(pair);
+    if (tradeDrivers) {
+      tradeDrivers.delete(tradeDriver);
+    }
+  }
+
+  addToTradeDriverSet(pair: string, tradeDriver: TradeDriver) {
     let set = this.tradeDrivers.get(pair);
     if (!set) {
       set = new Set<TradeDriver>();
       this.tradeDrivers.set(pair, set);
     }
     set.add(tradeDriver);
-
-    this.log('concurrent trades: %d', this.getConcurrentTradesCount());
   }
 
   getConcurrentTradesCount() {
@@ -194,6 +203,6 @@ export class MarketOrchestrator {
     }
     this.tradePreventIntervalId = setInterval(async () => {
       this.tradePrevented = await this.checkForTradesPrevented();
-    }, 1000 * 60 * 30);
+    }, 1000 * 60 * 5);
   }
 }
