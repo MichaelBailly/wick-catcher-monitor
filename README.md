@@ -9,6 +9,8 @@ DEBUG="*,-*:debug" npm run dev
 ### Trade driver
 
 - MAX_CONCURRENT_TRADES="3" : maximum number of concurrent trades. not set = no limit
+- BINANCE_API_KEY="xxx" : binance api key. If set, switch tradeDriver to real mode (will issue orders)
+- BINANCE_API_SECRET="xxx" : binance api secret
 
 ### Files & Database (daemon & db updater)
 

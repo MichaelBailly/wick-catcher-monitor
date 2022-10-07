@@ -19,6 +19,40 @@ enum TradeState {
   SOLD,
 }
 
+export class TradeDriverBuyError extends Error {
+  parent: Error;
+  constructor(message: string, parent: Error) {
+    super(message);
+    Object.setPrototypeOf(this, TradeDriverBuyError.prototype);
+
+    this.name = 'TradeDriverBuyError';
+    this.parent = parent;
+  }
+}
+
+export class TradeDriverSellError extends Error {
+  parent: Error;
+  constructor(message: string, parent: Error) {
+    super(message);
+    Object.setPrototypeOf(this, TradeDriverSellError.prototype);
+
+    this.name = 'TradeDriverSellError';
+    this.parent = parent;
+  }
+}
+
+export type TradeDriverTransactionError =
+  | TradeDriverBuyError
+  | TradeDriverSellError;
+
+export function isATradeDriverTransactionError(
+  err: unknown
+): err is TradeDriverTransactionError {
+  return (
+    err instanceof TradeDriverBuyError || err instanceof TradeDriverSellError
+  );
+}
+
 const simulationPromise = async (
   driver: TradeDriver
 ): Promise<{
@@ -55,7 +89,7 @@ export class TradeDriver {
     sellTimestamp: 0,
     low: 0,
   };
-  soldCallback: (trade: TradeResult) => void;
+  soldCallback: (response: TradeResult | TradeDriverTransactionError) => void;
   info: debug.Debugger;
   debug: debug.Debugger;
   error: debug.Debugger;
@@ -85,7 +119,7 @@ export class TradeDriver {
 
   constructor(
     marketWatcher: MarketWatcher,
-    onSold: (trade: TradeResult) => void,
+    onSold: (trade: TradeResult | TradeDriverTransactionError) => void,
     opts?: TradeDriverOpts
   ) {
     this.pair = marketWatcher.pair;
@@ -128,18 +162,28 @@ export class TradeDriver {
       const { price } = await simulationPromise(this);
       this.onBought(this.quoteAmount, price, Date.now());
     } else {
-      const [exchangeResponse, simulationResponse] = await Promise.all([
+      const [exchangeResponse, simulationResponse] = await Promise.allSettled([
         buy(this),
         simulationPromise(this),
       ]);
 
+      if (exchangeResponse.status === 'rejected') {
+        return this.soldCallback(
+          new TradeDriverBuyError('buy error', exchangeResponse.reason)
+        );
+      } else if (simulationResponse.status === 'rejected') {
+        return this.soldCallback(
+          new TradeDriverBuyError('buy error', simulationResponse.reason)
+        );
+      }
+
       this.simulation.quoteAmount = this.quoteAmount;
-      this.simulation.price = simulationResponse.price;
-      this.binanceBuyTransaction = exchangeResponse.response;
+      this.simulation.price = simulationResponse.value.price;
+      this.binanceBuyTransaction = exchangeResponse.value.response;
       this.onBought(
-        exchangeResponse.executedQuoteAmount,
-        exchangeResponse.price,
-        exchangeResponse.doneTimestamp
+        exchangeResponse.value.executedQuoteAmount,
+        exchangeResponse.value.price,
+        exchangeResponse.value.doneTimestamp
       );
     }
   }
@@ -194,18 +238,28 @@ export class TradeDriver {
       const { price } = await simulationPromise(this);
       this.onSold(this.tradeInfo.amount, price, Date.now());
     } else {
-      const [exchangeResponse, simulationResponse] = await Promise.all([
+      const [exchangeResponse, simulationResponse] = await Promise.allSettled([
         sell(this),
         simulationPromise(this),
       ]);
 
+      if (exchangeResponse.status === 'rejected') {
+        return this.soldCallback(
+          new TradeDriverSellError('buy error', exchangeResponse.reason)
+        );
+      } else if (simulationResponse.status === 'rejected') {
+        return this.soldCallback(
+          new TradeDriverSellError('buy error', simulationResponse.reason)
+        );
+      }
+
       this.simulation.soldAmount = this.tradeInfo.amount;
-      this.simulation.price = simulationResponse.price;
-      this.binanceBuyTransaction = exchangeResponse.response;
+      this.simulation.price = simulationResponse.value.price;
+      this.binanceBuyTransaction = exchangeResponse.value.response;
       this.onSold(
-        exchangeResponse.amount,
-        exchangeResponse.price,
-        exchangeResponse.doneTimestamp
+        exchangeResponse.value.amount,
+        exchangeResponse.value.price,
+        exchangeResponse.value.doneTimestamp
       );
     }
 

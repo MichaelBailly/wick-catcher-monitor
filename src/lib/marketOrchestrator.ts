@@ -7,8 +7,18 @@ import { MarketWatcher } from '../types/MarketWatcher';
 import { TradeResult } from '../types/TradeResult';
 import { onBtcKline } from './BtcTrendRecorder';
 import { MarketMemoryCollection } from './marketMemoryCollection';
+import {
+  sendBuyFailureNotification,
+  sendSellFailureNotification,
+  sendTradeResultNotification,
+} from './notifications/freeSmsApi';
 import { Pnl } from './pnl';
-import { TradeDriver } from './tradeDriver';
+import {
+  isATradeDriverTransactionError,
+  TradeDriver,
+  TradeDriverSellError,
+  TradeDriverTransactionError,
+} from './tradeDriver';
 import { getVolumeFamily } from './volume/volumeReference';
 
 const PREVENT_TRADE_FILE = 'prevent_trade';
@@ -126,10 +136,17 @@ export class MarketOrchestrator {
   }
 
   launchTrade(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
-    const onEndOfTrade = (tradeResult: TradeResult) => {
+    const onEndOfTrade = (
+      tradeResult: TradeResult | TradeDriverTransactionError
+    ) => {
       this.removeFromTradeDriverSet(pair, tradeDriver);
-      this.recordTradeSummary(tradeDriver, tradeResult);
-      this.pnl.onEndOfTrade(tradeDriver, tradeResult);
+      if (isATradeDriverTransactionError(tradeResult)) {
+        this.onTradeFailure(tradeDriver, tradeResult);
+      } else {
+        this.recordTradeSummary(tradeDriver, tradeResult);
+        this.pnl.onEndOfTrade(tradeDriver, tradeResult);
+        sendTradeResultNotification(tradeResult);
+      }
       this.log('concurrent trades: %d', this.getConcurrentTradesCount());
     };
 
@@ -142,6 +159,43 @@ export class MarketOrchestrator {
 
     this.addToTradeDriverSet(pair, tradeDriver);
     this.log('concurrent trades: %d', this.getConcurrentTradesCount());
+  }
+
+  onTradeFailure(
+    tradeDriver: TradeDriver,
+    tradeResult: TradeDriverTransactionError
+  ) {
+    this.log(
+      'Trade failure: %s - %s',
+      tradeResult.parent.message,
+      tradeResult.message
+    );
+    let transactionType = 'Buy';
+    if (tradeResult instanceof TradeDriverSellError) {
+      transactionType = 'Sell';
+      this.maxConcurrentTrades -= 1;
+      this.log(
+        'Sell error: decreased concurrent trades to %d',
+        this.maxConcurrentTrades
+      );
+    }
+    const errorFilename = `${RECORDER_FILE_PATH}/trade-transaction-${format(
+      new Date(),
+      'yyyyMMddHHmm'
+    )}.err`;
+
+    const message = [
+      `Trade failure: ${tradeResult.message}`,
+      `Pair: ${tradeDriver.pair}`,
+      `Watcher: ${tradeDriver.confLine}`,
+    ];
+    writeFile(errorFilename, message.join('\n'));
+
+    if (transactionType === 'Buy') {
+      sendBuyFailureNotification(tradeDriver, tradeResult);
+    } else {
+      sendSellFailureNotification(tradeDriver, tradeResult);
+    }
   }
 
   removeFromTradeDriverSet(pair: string, tradeDriver: TradeDriver) {

@@ -130,6 +130,12 @@ async function createOrder(pair: string, side: string, opts: CreateOrderOpts) {
     }
   );
   response = await fetch(tradeRequest);
+  if (!response.ok) {
+    throw new BinanceTransactionError(
+      `Error creating order: ${response.status} ${response.statusText}`,
+      response
+    );
+  }
   const data = await response.json();
   console.log(data);
   if (!isBinanceOrderResponse(data)) {
@@ -147,4 +153,8 @@ export async function buy(pair: string, quoteOrderQty: number) {
 
 export async function sell(pair: string, quantity: number) {
   return createOrder(pair, 'SELL', { quantity });
+}
+
+export function getSymbol(pair: string) {
+  return symbols.find((symbol) => symbol.symbol === pair);
 }

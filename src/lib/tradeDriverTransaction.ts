@@ -4,6 +4,7 @@ import { RECORDER_FILE_PATH } from '../config';
 import {
   BinanceTransactionError,
   buy as binanceBuy,
+  getSymbol,
   sell as binanceSell,
 } from '../exchanges/binance';
 import { isBinanceOrderFill } from '../types/BinanceOrderFill';
@@ -15,7 +16,10 @@ export async function sell(driver: TradeDriver) {
     throw new Error('No buy transaction found');
   }
 
-  const amount = parseFloat(driver.binanceBuyTransaction.executedQty);
+  const amount = getSellAmount(
+    parseFloat(driver.binanceBuyTransaction.executedQty),
+    driver.pair
+  );
 
   let response;
   try {
@@ -57,7 +61,7 @@ export async function buy(driver: TradeDriver) {
     response = await binanceBuy(pair, quoteAmount);
   } catch (e) {
     if (e instanceof BinanceTransactionError || e instanceof Error) {
-      onTransactionError(e);
+      await onTransactionError(e);
     } else {
       console.log('ERROR: unexpected error type');
       console.log(e);
@@ -121,4 +125,11 @@ async function onTransactionError(error: BinanceTransactionError | Error) {
   fileContents.push(`error.message: ${error.message}`);
 
   await writeFile(errorFilename, fileContents.join('\n'), 'utf8');
+}
+
+function getSellAmount(qty: number, pair: string) {
+  const symbol = getSymbol(pair);
+  const power = symbol?.baseAssetPrecision || 8;
+  const factor = 10 ** power;
+  return Math.floor(qty * factor) / factor;
 }
