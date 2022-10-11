@@ -40,7 +40,7 @@ export async function sell(driver: TradeDriver) {
   const amountSold = parseFloat(response.executedQty);
   // price of token sold
   const priceTotal = response.fills.reduce((acc, fill) => {
-    return acc + parseFloat(fill.price);
+    return acc + parseFloat(fill.price) * parseFloat(fill.qty);
   }, 0);
   const price = priceTotal / amountSold;
 
