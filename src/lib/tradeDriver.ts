@@ -254,7 +254,7 @@ export class TradeDriver {
       }
 
       this.simulation.soldAmount = this.tradeInfo.amount;
-      this.simulation.price = simulationResponse.value.price;
+      this.simulation.soldPrice = simulationResponse.value.price;
       this.binanceSellTransaction = exchangeResponse.value.response;
       this.onSold(
         exchangeResponse.value.amount,
