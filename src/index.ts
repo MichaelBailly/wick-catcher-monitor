@@ -3,7 +3,10 @@ import { readFile } from 'node:fs/promises';
 import { init as initBinance } from './exchanges/binance';
 import { MarketMemoryCollection } from './lib/marketMemoryCollection';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
-import { updateVolumeReference } from './lib/volume/volumeReferenceUpdater';
+import {
+  enableDailyUpdates,
+  updateVolumeReference,
+} from './lib/volume/volumeReferenceUpdater';
 import { MarketProfile } from './types/MarketProfile';
 import { start } from './ws';
 
@@ -35,6 +38,7 @@ async function setupEnv() {
 
 async function run() {
   await updateVolumeReference();
+  enableDailyUpdates();
   const pairs = await initBinance();
   d('%d pairs', pairs.length);
   const streams = pairs.map((pair) => `${pair.toLowerCase()}@kline_1m`);

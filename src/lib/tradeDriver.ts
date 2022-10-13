@@ -245,11 +245,11 @@ export class TradeDriver {
 
       if (exchangeResponse.status === 'rejected') {
         return this.soldCallback(
-          new TradeDriverSellError('buy error', exchangeResponse.reason)
+          new TradeDriverSellError('sell error', exchangeResponse.reason)
         );
       } else if (simulationResponse.status === 'rejected') {
         return this.soldCallback(
-          new TradeDriverSellError('buy error', simulationResponse.reason)
+          new TradeDriverSellError('sell error', simulationResponse.reason)
         );
       }
 
