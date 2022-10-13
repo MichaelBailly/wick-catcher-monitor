@@ -21,6 +21,13 @@ export async function sell(driver: TradeDriver) {
     driver.pair
   );
 
+  recordTransactionArgs(
+    driver.pair,
+    driver.binanceBuyTransaction.executedQty,
+    parseFloat(driver.binanceBuyTransaction.executedQty),
+    amount
+  );
+
   let response;
   try {
     response = await binanceSell(driver.pair, amount);
@@ -132,4 +139,23 @@ function getSellAmount(qty: number, pair: string) {
   const power = symbol?.baseAssetPrecision || 8;
   const factor = 10 ** power;
   return Math.floor(qty * factor) / factor;
+}
+
+export async function recordTransactionArgs(
+  pair: string,
+  qty: string,
+  executedQty: number,
+  amount: number
+) {
+  const filename = `${RECORDER_FILE_PATH}/binance-transaction-args-${format(
+    new Date(),
+    'yyyyMMddHHmm'
+  )}.txt`;
+  const fileContents = [
+    `pair: ${pair}`,
+    `executedQty: ${qty}`,
+    `executedQty (float): ${executedQty}`,
+    `amount: ${amount}`,
+  ];
+  writeFile(filename, fileContents.join('\n'), 'utf8');
 }
