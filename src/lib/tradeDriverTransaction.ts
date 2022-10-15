@@ -11,7 +11,21 @@ import { isBinanceOrderFill } from '../types/BinanceOrderFill';
 import { BinanceOrderResponse } from '../types/BinanceOrderResponse';
 import { TradeDriver } from './tradeDriver';
 
+const MAX_SELL_ATTEMPTS = 3;
+
 export async function sell(driver: TradeDriver) {
+  let attempts = 1;
+  while (attempts <= MAX_SELL_ATTEMPTS) {
+    try {
+      return await sellTentative(driver);
+    } catch (e) {
+      attempts++;
+    }
+  }
+  throw new Error(`Failed to sell after ${MAX_SELL_ATTEMPTS} attempts`);
+}
+
+export async function sellTentative(driver: TradeDriver) {
   if (!driver.binanceBuyTransaction) {
     throw new Error('No buy transaction found');
   }
