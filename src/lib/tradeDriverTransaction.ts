@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import debug from 'debug';
 import { writeFile } from 'fs/promises';
 import { RECORDER_FILE_PATH } from '../config';
 import {
@@ -11,6 +12,7 @@ import { isBinanceOrderFill } from '../types/BinanceOrderFill';
 import { BinanceOrderResponse } from '../types/BinanceOrderResponse';
 import { TradeDriver } from './tradeDriver';
 
+const log = debug('lib:tradeDriverTransaction');
 const MAX_SELL_ATTEMPTS = 3;
 
 export async function sell(driver: TradeDriver) {
@@ -19,6 +21,7 @@ export async function sell(driver: TradeDriver) {
     try {
       return await sellTentative(driver);
     } catch (e) {
+      log(`Error: %s sell attempt ${attempts} failed: %o`, driver.pair, e);
       attempts++;
     }
   }
@@ -129,7 +132,7 @@ async function recordBinanceTransactionResponse(
 async function onTransactionError(error: BinanceTransactionError | Error) {
   const errorFilename = `${RECORDER_FILE_PATH}/binance-transaction-${format(
     new Date(),
-    'yyyyMMddHHmm'
+    'yyyyMMddHHmmssSS'
   )}.err`;
   const fileContents = [];
   if (error instanceof BinanceTransactionError && error.response) {
