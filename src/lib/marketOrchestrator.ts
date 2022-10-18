@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import debug from 'debug';
-import { stat, writeFile } from 'fs/promises';
+import { readFile, stat, unlink, writeFile } from 'fs/promises';
 import { MAX_CONCURRENT_TRADES, RECORDER_FILE_PATH } from '../config';
 import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
@@ -22,6 +22,7 @@ import {
 import { getVolumeFamily } from './volume/volumeReference';
 
 const PREVENT_TRADE_FILE = 'prevent_trade';
+const MAX_CONCURRENT_TRADES_FILE = 'max_concurrent_trades';
 const ALIVE_TTL = 30 * 60 * 1000;
 
 export class MarketOrchestrator {
@@ -36,6 +37,7 @@ export class MarketOrchestrator {
   tradePreventIntervalId: NodeJS.Timeout | null = null;
   tradePrevented: boolean = false;
   maxConcurrentTrades: number = MAX_CONCURRENT_TRADES;
+  maxConcurrentTradesIntervalId: NodeJS.Timeout | null = null;
 
   constructor(private marketMemoryCollection: MarketMemoryCollection) {
     this.collection = marketMemoryCollection;
@@ -238,5 +240,39 @@ export class MarketOrchestrator {
     this.tradePreventIntervalId = setInterval(async () => {
       this.tradePrevented = await this.checkForTradesPrevented();
     }, 1000 * 60 * 5);
+  }
+
+  async checkMaxConcurrentTradesFile() {
+    const file = `./${MAX_CONCURRENT_TRADES_FILE}`;
+    try {
+      await stat(file);
+    } catch (e) {
+      return;
+    }
+
+    const content = await readFile(file, 'utf8');
+    const maxConcurrentTrades = parseInt(content.trim(), 10);
+    if (maxConcurrentTrades && !isNaN(maxConcurrentTrades)) {
+      this.maxConcurrentTrades = maxConcurrentTrades;
+      this.log(
+        'Max concurrent trades set from file: %d',
+        this.maxConcurrentTrades
+      );
+      try {
+        await unlink(file);
+      } catch (e) {
+        this.log('Failed to delete %s', file);
+      }
+    }
+  }
+
+  enableMaxConcurrentTradesFileChecker() {
+    if (this.maxConcurrentTradesIntervalId) {
+      clearInterval(this.maxConcurrentTradesIntervalId);
+    }
+    this.maxConcurrentTradesIntervalId = setInterval(
+      () => this.checkMaxConcurrentTradesFile(),
+      1000 * 60 * 5
+    );
   }
 }

@@ -46,6 +46,7 @@ async function run() {
   start(streamName, orchestrators);
   for (const orchestrator of orchestrators) {
     orchestrator.enableTradePrevent();
+    orchestrator.enableMaxConcurrentTradesFileChecker();
   }
 }
 

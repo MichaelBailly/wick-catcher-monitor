@@ -26,3 +26,4 @@ DEBUG="*,-*:debug" npm run dev
 ## Magic files
 
 - **prevent_trade** : do not take any new trade. Checked every 5 minutes
+- **max_concurrent_trades** : Contains an integer. Sets the max concurrent trades. Checked every 5 minutes
