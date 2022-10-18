@@ -82,7 +82,11 @@ export class MarketOrchestrator {
         new Date(),
         this.aliveCount
       );
-      this.log('concurrent trades: %d', this.getConcurrentTradesCount());
+      this.log(
+        '%d max concurrent trades, concurrent trades: %d',
+        this.maxConcurrentTrades,
+        this.getConcurrentTradesCount()
+      );
       this.log(summaryString);
       this.log('------------------------------------------------------');
       this.aliveTimestamp = Date.now() + ALIVE_TTL;
