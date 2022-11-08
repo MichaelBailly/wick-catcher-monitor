@@ -24,7 +24,13 @@ async function run() {
 async function readTrade(file: string): Promise<TradeRecord> {
   const filePath = join(RECORDER_FILE_PATH, file);
   const content = await readFile(filePath, 'utf-8');
-  const trade = JSON.parse(content);
+  let trade;
+  try {
+    trade = JSON.parse(content);
+  } catch (e) {
+    console.log(`Could not parse trade file ${file}`);
+    throw e;
+  }
   trade._id = new ObjectId();
   trade.buyTimestamp = new Date(trade.buyTimestamp);
   trade.sellTimestamp = new Date(trade.sellTimestamp);
