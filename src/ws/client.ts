@@ -1,23 +1,20 @@
 import debug from 'debug';
 import WebSocket from 'ws';
+import { getWebsocket } from '../exchanges/binance';
 import { BinanceWebSocketKlineMessage } from '../types/BinanceWebSocketKlineMessage';
 
 const d = debug('ws:client:info');
 const deb = debug('ws:client:debug');
 
 class SocketClient {
-  baseUrl: string;
-  private _path: string;
   private _handlers: Map<string, Function[]>;
   private _ws: WebSocket | null = null;
-  constructor(path: string, baseUrl: string) {
-    this.baseUrl = baseUrl || 'wss://stream.binance.com/';
-    this._path = path;
+  constructor() {
     this._handlers = new Map();
   }
 
-  start() {
-    this._ws = new WebSocket(`${this.baseUrl}${this._path}`);
+  async start() {
+    this._ws = await getWebsocket();
     const ws = this._ws;
 
     this._ws.onopen = () => {
@@ -58,7 +55,7 @@ class SocketClient {
           msg.data
         );
 
-        if (!handlerMessage.data.e) {
+        if (!handlerMessage?.data.e) {
           d('Unknown method');
           return;
         }

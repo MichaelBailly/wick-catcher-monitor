@@ -1,6 +1,8 @@
 import { createHmac } from 'crypto';
+import debug from 'debug';
 import querystring from 'node:querystring';
 import pThrottle from 'p-throttle';
+import WebSocket from 'ws';
 import { BINANCE_KEY, BINANCE_SECRET } from '../config';
 import { isBinanceExchangeResponse } from '../types/BinanceExchangeResponse';
 import { isBinanceOrderResponse } from '../types/BinanceOrderResponse';
@@ -12,9 +14,11 @@ const throttled = pThrottle({
   interval: 3000,
 });
 
+const d = debug('binance');
+
 let symbols: BinanceSymbol[] = [];
 
-export async function init(): Promise<string[]> {
+export async function reloadSymbols(): Promise<string[]> {
   const url = 'https://api.binance.com/api/v3/exchangeInfo';
   const response = await fetch(url);
   const data = await response.json();
@@ -39,8 +43,21 @@ export async function init(): Promise<string[]> {
       !/\w+DOWN$/.test(symbol.baseAsset) &&
       symbol.isSpotTradingAllowed
   );
+  d('%d pairs', symbols.length);
+  return symbols.map((pair) => pair.symbol);
+}
 
-  return symbols.map((pair: any) => pair.symbol);
+export function getWebsocketChannels() {
+  return symbols.map((pair) => `${pair.symbol.toLowerCase()}@kline_1m`);
+}
+
+export async function getWebsocket() {
+  await reloadSymbols();
+  const url = 'wss://stream.binance.com:9443/';
+  const ws = new WebSocket(
+    `${url}stream?streams=${getWebsocketChannels().join('/')}`
+  );
+  return ws;
 }
 
 export async function getLastDaysCandlesInternal(

@@ -4,11 +4,8 @@ import { BinanceWebSocketMessage } from '../types/BinanceWebSocketMessage';
 import { IKline } from '../types/IKline';
 import SocketClient from './client';
 
-export function start(streamName: string, orchestrators: MarketOrchestrator[]) {
-  const socketClient = new SocketClient(
-    `${streamName}`,
-    'wss://stream.binance.com:9443/'
-  );
+export function start(orchestrators: MarketOrchestrator[]) {
+  const socketClient = new SocketClient();
 
   socketClient.setHandler('kline', (params: BinanceWebSocketMessage) => {
     const pair = params.data.s;
