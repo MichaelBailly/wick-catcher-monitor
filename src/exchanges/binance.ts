@@ -7,6 +7,7 @@ import { BINANCE_KEY, BINANCE_SECRET } from '../config';
 import { isBinanceExchangeResponse } from '../types/BinanceExchangeResponse';
 import { isBinanceOrderResponse } from '../types/BinanceOrderResponse';
 import { BinanceSymbol } from '../types/BinanceSymbol';
+import { BinanceTransactionError } from '../types/BinanceTransactionError';
 import { IKline } from '../types/IKline';
 
 const throttled = pThrottle({
@@ -108,17 +109,6 @@ type CreateOrderOpts = {
   quoteOrderQty?: number;
   quantity?: number;
 };
-
-export class BinanceTransactionError extends Error {
-  response: Response;
-  constructor(message: string, response: Response) {
-    super(message);
-    Object.setPrototypeOf(this, BinanceTransactionError.prototype);
-
-    this.name = 'BinanceTransactionError';
-    this.response = response;
-  }
-}
 
 async function createOrder(pair: string, side: string, opts: CreateOrderOpts) {
   let response;

@@ -9,7 +9,8 @@ import { SimulationResponse } from '../types/SimulationResponse';
 import { TradeDriverOpts } from '../types/TradeDriverOpts';
 import { TradeInfo } from '../types/TradeInfo';
 import { TradeResult } from '../types/TradeResult';
-import { buy, sell } from './tradeDriverTransaction';
+import { buy } from './tradeDriver/buyTransaction';
+import { sell } from './tradeDriver/sellTransaction';
 
 enum TradeState {
   NONE,
