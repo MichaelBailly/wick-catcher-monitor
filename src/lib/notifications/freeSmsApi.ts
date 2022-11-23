@@ -1,7 +1,8 @@
 import debug from 'debug';
 import { FREE_SMS_API_PASSWORD, FREE_SMS_API_USER } from '../../config';
 import { TradeResult } from '../../types/TradeResult';
-import { TradeDriver, TradeDriverTransactionError } from '../tradeDriver';
+import { TradeDriver } from '../tradeDriver';
+import { TradeDriverTransactionError } from '../tradeDriver/TradeDriverTransactionError';
 
 const log = debug('notifications:freesmsapi');
 

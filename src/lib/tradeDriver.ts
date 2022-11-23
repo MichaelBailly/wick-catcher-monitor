@@ -11,6 +11,9 @@ import { TradeInfo } from '../types/TradeInfo';
 import { TradeResult } from '../types/TradeResult';
 import { buy } from './tradeDriver/buyTransaction';
 import { sell } from './tradeDriver/sellTransaction';
+import { TradeDriverBuyError } from './tradeDriver/TradeDriverBuyError';
+import { TradeDriverSellError } from './tradeDriver/TradeDriverSellError';
+import { TradeDriverTransactionError } from './tradeDriver/TradeDriverTransactionError';
 
 enum TradeState {
   NONE,
@@ -18,40 +21,6 @@ enum TradeState {
   BOUGHT,
   SELL,
   SOLD,
-}
-
-export class TradeDriverBuyError extends Error {
-  parent: Error;
-  constructor(message: string, parent: Error) {
-    super(message);
-    Object.setPrototypeOf(this, TradeDriverBuyError.prototype);
-
-    this.name = 'TradeDriverBuyError';
-    this.parent = parent;
-  }
-}
-
-export class TradeDriverSellError extends Error {
-  parent: Error;
-  constructor(message: string, parent: Error) {
-    super(message);
-    Object.setPrototypeOf(this, TradeDriverSellError.prototype);
-
-    this.name = 'TradeDriverSellError';
-    this.parent = parent;
-  }
-}
-
-export type TradeDriverTransactionError =
-  | TradeDriverBuyError
-  | TradeDriverSellError;
-
-export function isATradeDriverTransactionError(
-  err: unknown
-): err is TradeDriverTransactionError {
-  return (
-    err instanceof TradeDriverBuyError || err instanceof TradeDriverSellError
-  );
 }
 
 const simulationPromise = async (

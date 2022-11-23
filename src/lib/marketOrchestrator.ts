@@ -13,12 +13,12 @@ import {
   sendTradeResultNotification,
 } from './notifications/freeSmsApi';
 import { Pnl } from './pnl';
+import { TradeDriver } from './tradeDriver';
+import { TradeDriverSellError } from './tradeDriver/TradeDriverSellError';
 import {
   isATradeDriverTransactionError,
-  TradeDriver,
-  TradeDriverSellError,
   TradeDriverTransactionError,
-} from './tradeDriver';
+} from './tradeDriver/TradeDriverTransactionError';
 import { getVolumeFamily } from './volume/volumeReference';
 
 const PREVENT_TRADE_FILE = 'prevent_trade';
