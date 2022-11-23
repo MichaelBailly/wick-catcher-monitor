@@ -53,7 +53,8 @@ export async function sell(driver: TradeDriver) {
 
 export async function sellTentative(
   driver: TradeDriver,
-  forcedAmount: number | undefined = undefined
+  forcedAmount: number | undefined = undefined,
+  strategy: string | undefined = undefined
 ) {
   if (!driver.binanceBuyTransaction) {
     throw new Error('No buy transaction found');
@@ -104,6 +105,7 @@ export async function sellTentative(
     price,
     response,
     doneTimestamp: Date.now(),
+    strategy,
   };
 }
 

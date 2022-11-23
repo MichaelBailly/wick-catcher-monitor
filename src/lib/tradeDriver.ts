@@ -260,7 +260,8 @@ export class TradeDriver {
       this.onSold(
         exchangeResponse.value.amount,
         exchangeResponse.value.price,
-        exchangeResponse.value.doneTimestamp
+        exchangeResponse.value.doneTimestamp,
+        exchangeResponse.value.strategy
       );
     }
 
@@ -270,7 +271,12 @@ export class TradeDriver {
     }
   }
 
-  onSold(amount: number, price: number, soldTimestamp: number = Date.now()) {
+  onSold(
+    amount: number,
+    price: number,
+    soldTimestamp: number = Date.now(),
+    strategy: string | undefined = undefined
+  ) {
     if (this.state !== TradeState.SELL) {
       return;
     }
@@ -292,6 +298,7 @@ export class TradeDriver {
       soldAmount: amount,
       soldPrice: price,
       soldTimestamp,
+      sellStrategy: strategy,
     };
     if (
       this.isProduction &&

@@ -7,6 +7,7 @@ export type TradeResult = TradeInfo & {
   soldTimestamp: number;
   soldAmount: number;
   soldPrice: number;
+  sellStrategy?: string;
   details?: {
     simulation: SimulationResponse;
     buyTransaction: BinanceOrderResponse;

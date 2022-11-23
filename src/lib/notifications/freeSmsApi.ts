@@ -10,7 +10,10 @@ export async function sendTradeResultNotification(tradeResult: TradeResult) {
     tradeResult.soldAmount * tradeResult.soldPrice -
     tradeResult.quoteAmount
   ).toFixed(2);
-  const message = `Trade complete ${tradeResult.pair} ${pnl}`;
+  let message = `Trade complete ${tradeResult.pair} ${pnl}`;
+  if (tradeResult.sellStrategy) {
+    message += ` - strategy: ${tradeResult.sellStrategy}`;
+  }
   sendSms(message);
 }
 
@@ -26,7 +29,7 @@ export async function sendSellFailureNotification(
   tradeDriver: TradeDriver,
   error: TradeDriverTransactionError
 ) {
-  const message = `Sell order for ${tradeDriver.pair} failed`;
+  let message = `Sell order for ${tradeDriver.pair} failed`;
   sendSms(message);
 }
 
