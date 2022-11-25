@@ -129,33 +129,41 @@ export class TradeDriver {
     this.tradeInfo.buyTimestamp = Date.now();
 
     if (!this.isProduction) {
-      const { price } = await simulationPromise(this);
-      this.onBought(this.quoteAmount, price, Date.now());
+      await this.buyUsingSimulation();
     } else {
-      const [exchangeResponse, simulationResponse] = await Promise.allSettled([
-        buy(this),
-        simulationPromise(this),
-      ]);
+      await this.buyUsingExchange();
+    }
+  }
 
-      if (exchangeResponse.status === 'rejected') {
-        return this.soldCallback(
-          new TradeDriverBuyError('buy error', exchangeResponse.reason)
-        );
-      } else if (simulationResponse.status === 'rejected') {
-        return this.soldCallback(
-          new TradeDriverBuyError('buy error', simulationResponse.reason)
-        );
-      }
+  async buyUsingSimulation() {
+    const { price } = await simulationPromise(this);
+    this.onBought(this.quoteAmount, price, Date.now());
+  }
 
-      this.simulation.quoteAmount = this.quoteAmount;
-      this.simulation.price = simulationResponse.value.price;
-      this.binanceBuyTransaction = exchangeResponse.value.response;
-      this.onBought(
-        exchangeResponse.value.executedQuoteAmount,
-        exchangeResponse.value.price,
-        exchangeResponse.value.doneTimestamp
+  async buyUsingExchange() {
+    const [exchangeResponse, simulationResponse] = await Promise.allSettled([
+      buy(this),
+      simulationPromise(this),
+    ]);
+
+    if (exchangeResponse.status === 'rejected') {
+      return this.soldCallback(
+        new TradeDriverBuyError('buy error', exchangeResponse.reason)
+      );
+    } else if (simulationResponse.status === 'rejected') {
+      return this.soldCallback(
+        new TradeDriverBuyError('buy error', simulationResponse.reason)
       );
     }
+
+    this.simulation.quoteAmount = this.quoteAmount;
+    this.simulation.price = simulationResponse.value.price;
+    this.binanceBuyTransaction = exchangeResponse.value.response;
+    this.onBought(
+      exchangeResponse.value.executedQuoteAmount,
+      exchangeResponse.value.price,
+      exchangeResponse.value.doneTimestamp
+    );
   }
 
   onBought(
@@ -205,39 +213,47 @@ export class TradeDriver {
     this.tradeInfo.sellTimestamp = Date.now();
 
     if (!this.isProduction) {
-      const { price } = await simulationPromise(this);
-      this.onSold(this.tradeInfo.amount, price, Date.now());
+      await this.sellUsingSimulation();
     } else {
-      const [exchangeResponse, simulationResponse] = await Promise.allSettled([
-        sell(this),
-        simulationPromise(this),
-      ]);
-
-      if (exchangeResponse.status === 'rejected') {
-        return this.soldCallback(
-          new TradeDriverSellError('sell error', exchangeResponse.reason)
-        );
-      } else if (simulationResponse.status === 'rejected') {
-        return this.soldCallback(
-          new TradeDriverSellError('sell error', simulationResponse.reason)
-        );
-      }
-
-      this.simulation.soldAmount = this.tradeInfo.amount;
-      this.simulation.soldPrice = simulationResponse.value.price;
-      this.binanceSellTransaction = exchangeResponse.value.response;
-      this.onSold(
-        exchangeResponse.value.amount,
-        exchangeResponse.value.price,
-        exchangeResponse.value.doneTimestamp,
-        exchangeResponse.value.strategy
-      );
+      await this.sellUsingExchange();
     }
 
     if (this.sellTimeoutId !== null) {
       clearTimeout(this.sellTimeoutId);
       this.sellTimeoutId = null;
     }
+  }
+
+  async sellUsingSimulation() {
+    const { price } = await simulationPromise(this);
+    this.onSold(this.tradeInfo.amount, price, Date.now());
+  }
+
+  async sellUsingExchange() {
+    const [exchangeResponse, simulationResponse] = await Promise.allSettled([
+      sell(this),
+      simulationPromise(this),
+    ]);
+
+    if (exchangeResponse.status === 'rejected') {
+      return this.soldCallback(
+        new TradeDriverSellError('sell error', exchangeResponse.reason)
+      );
+    } else if (simulationResponse.status === 'rejected') {
+      return this.soldCallback(
+        new TradeDriverSellError('sell error', simulationResponse.reason)
+      );
+    }
+
+    this.simulation.soldAmount = this.tradeInfo.amount;
+    this.simulation.soldPrice = simulationResponse.value.price;
+    this.binanceSellTransaction = exchangeResponse.value.response;
+    this.onSold(
+      exchangeResponse.value.amount,
+      exchangeResponse.value.price,
+      exchangeResponse.value.doneTimestamp,
+      exchangeResponse.value.strategy
+    );
   }
 
   onSold(
