@@ -1,7 +1,7 @@
 import debug from 'debug';
 import { readFile } from 'node:fs/promises';
-import { MarketMemoryCollection } from './lib/marketMemoryCollection';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
+import { MarketWatcherCollection } from './lib/marketWatcherCollection';
 import {
   enableDailyUpdates,
   updateVolumeReference,
@@ -17,7 +17,7 @@ type Configuration = {
 };
 
 async function setupEnv() {
-  const collection = new MarketMemoryCollection();
+  const collection = new MarketWatcherCollection();
 
   const configFile = await readFile('config.json', 'utf-8');
   const config: Configuration = JSON.parse(configFile);

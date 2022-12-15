@@ -6,7 +6,7 @@ import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
 import { TradeResult } from '../types/TradeResult';
 import { onBtcKline } from './BtcTrendRecorder';
-import { MarketMemoryCollection } from './marketMemoryCollection';
+import { MarketWatcherCollection } from './marketWatcherCollection';
 import {
   sendBuyFailureNotification,
   sendSellFailureNotification,
@@ -32,15 +32,15 @@ export class MarketOrchestrator {
   log: debug.Debugger = debug('marketOrchestrator');
   debug: debug.Debugger = debug('marketOrchestrator:debug');
   pnl: Pnl = new Pnl();
-  collection: MarketMemoryCollection;
+  collection: MarketWatcherCollection;
   watcherInhibiter: Set<string> = new Set();
   tradePreventIntervalId: NodeJS.Timeout | null = null;
   tradePrevented: boolean = false;
   maxConcurrentTrades: number = MAX_CONCURRENT_TRADES;
   maxConcurrentTradesIntervalId: NodeJS.Timeout | null = null;
 
-  constructor(private marketMemoryCollection: MarketMemoryCollection) {
-    this.collection = marketMemoryCollection;
+  constructor(private marketWatcherCollection: MarketWatcherCollection) {
+    this.collection = marketWatcherCollection;
   }
 
   onKline(pair: string, msg: IKline) {

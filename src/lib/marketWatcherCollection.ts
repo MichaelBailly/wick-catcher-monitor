@@ -6,7 +6,7 @@ import { VolumeMarketWatcherOpts } from '../types/VolumeMarketWatcherOpts';
 import { PriceMarketWatcher } from './marketWatchers/priceMarketWatcher';
 import { VolumeMarketWatcher } from './marketWatchers/volumeMarketWatcher';
 
-export class MarketMemoryCollection {
+export class MarketWatcherCollection {
   private marketWatcherTypes: Set<MarketProfile> = new Set();
   private marketWatchers: Map<string, MarketWatcher[]> = new Map();
 
