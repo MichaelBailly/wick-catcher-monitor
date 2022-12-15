@@ -49,11 +49,11 @@ export class MarketOrchestrator {
       return;
     }
     this.tradeDriverHook(pair, msg);
-    this.marketMemoryHook(pair, msg);
+    this.marketWatcherHook(pair, msg);
     this.aliveHook();
   }
 
-  marketMemoryHook(pair: string, msg: IKline) {
+  marketWatcherHook(pair: string, msg: IKline) {
     const marketWatchers = this.collection.get(pair);
     for (const marketWatcher of marketWatchers) {
       marketWatcher.onKlineMessage(msg);
