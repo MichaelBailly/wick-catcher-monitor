@@ -6,6 +6,7 @@ import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
 import { TradeResult } from '../types/TradeResult';
 import { onBtcKline } from './BtcTrendRecorder';
+import { MarketWatcherInhibitor } from './marketOrchestrator/watcherInhibitor';
 import { MarketWatcherCollection } from './marketWatcherCollection';
 import {
   sendBuyFailureNotification,
@@ -33,7 +34,7 @@ export class MarketOrchestrator {
   debug: debug.Debugger = debug('marketOrchestrator:debug');
   pnl: Pnl = new Pnl();
   collection: MarketWatcherCollection;
-  watcherInhibiter: Set<string> = new Set();
+  watcherInhibiter = new MarketWatcherInhibitor(1000 * 60 * 60);
   tradePreventIntervalId: NodeJS.Timeout | null = null;
   tradePrevented: boolean = false;
   maxConcurrentTrades: number = MAX_CONCURRENT_TRADES;
@@ -57,8 +58,10 @@ export class MarketOrchestrator {
     const marketWatchers = this.collection.get(pair);
     for (const marketWatcher of marketWatchers) {
       marketWatcher.onKlineMessage(msg);
-      if (marketWatcher.detectFlashWick()) {
-        this.onFlashWick(marketWatcher, pair, msg);
+      if (!this.watcherInhibiter.isInhibited(marketWatcher)) {
+        if (marketWatcher.detectFlashWick()) {
+          this.onFlashWick(marketWatcher, pair, msg);
+        }
       }
     }
   }
@@ -120,25 +123,11 @@ export class MarketOrchestrator {
       this.log('%o - Max concurrent trades reached', new Date());
       return;
     }
-    if (!this.setWatcherInhibiter(marketWatcher)) {
+    if (!this.watcherInhibiter.inhibit(marketWatcher)) {
       return;
     }
 
     this.launchTrade(marketWatcher, pair, msg);
-  }
-
-  setWatcherInhibiter(marketWatcher: MarketWatcher) {
-    const confLine = `${marketWatcher.pair}/${marketWatcher.getConfLine()}`;
-    if (this.watcherInhibiter.has(confLine)) {
-      return false;
-    }
-
-    this.watcherInhibiter.add(confLine);
-    setTimeout(() => {
-      this.watcherInhibiter.delete(confLine);
-    }, 1000 * 60 * 60);
-
-    return true;
   }
 
   launchTrade(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
