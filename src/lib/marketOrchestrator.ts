@@ -1,12 +1,14 @@
-import { format } from 'date-fns';
 import debug from 'debug';
-import { readFile, stat, unlink, writeFile } from 'fs/promises';
-import { MAX_CONCURRENT_TRADES, RECORDER_FILE_PATH } from '../config';
+import { readFile, stat, unlink } from 'fs/promises';
+import { MAX_CONCURRENT_TRADES } from '../config';
 import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
 import { TradeResult } from '../types/TradeResult';
 import { onBtcKline } from './BtcTrendRecorder';
-import { recordTradeSummary } from './marketOrchestrator/displayers';
+import {
+  recordTradeFailure,
+  recordTradeSummary,
+} from './marketOrchestrator/displayers';
 import { MarketWatcherInhibitor } from './marketOrchestrator/watcherInhibitor';
 import { MarketWatcherCollection } from './marketWatcherCollection';
 import {
@@ -157,17 +159,8 @@ export class MarketOrchestrator {
         this.maxConcurrentTrades
       );
     }
-    const errorFilename = `${RECORDER_FILE_PATH}/trade-transaction-${format(
-      new Date(),
-      'yyyyMMddHHmm'
-    )}.err`;
 
-    const message = [
-      `Trade failure: ${tradeResult.message}`,
-      `Pair: ${tradeDriver.pair}`,
-      `Watcher: ${tradeDriver.confLine}`,
-    ];
-    writeFile(errorFilename, message.join('\n'));
+    recordTradeFailure(tradeDriver, tradeResult);
 
     if (transactionType === 'Buy') {
       sendBuyFailureNotification(tradeDriver, tradeResult);
