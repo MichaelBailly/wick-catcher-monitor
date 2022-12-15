@@ -6,6 +6,7 @@ import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
 import { TradeResult } from '../types/TradeResult';
 import { onBtcKline } from './BtcTrendRecorder';
+import { recordTradeSummary } from './marketOrchestrator/displayers';
 import { MarketWatcherInhibitor } from './marketOrchestrator/watcherInhibitor';
 import { MarketWatcherCollection } from './marketWatcherCollection';
 import {
@@ -20,7 +21,6 @@ import {
   isATradeDriverTransactionError,
   TradeDriverTransactionError,
 } from './tradeDriver/TradeDriverTransactionError';
-import { getVolumeFamily } from './volume/volumeReference';
 
 const PREVENT_TRADE_FILE = 'prevent_trade';
 const MAX_CONCURRENT_TRADES_FILE = 'max_concurrent_trades';
@@ -97,23 +97,6 @@ export class MarketOrchestrator {
     }
   }
 
-  recordTradeSummary(trade: TradeDriver, tradeResult: TradeResult) {
-    const filename = `${RECORDER_FILE_PATH}/trade-${trade.confLine}-${format(
-      new Date(),
-      'yyyyMMddHHmm'
-    )}.json`;
-    const volumeFamily = getVolumeFamily(tradeResult.pair) || 'unknown';
-    const data = {
-      ...tradeResult,
-      volumeFamily,
-      watcher: {
-        type: trade.confData.type,
-        config: trade.confData.config,
-      },
-    };
-    writeFile(filename, JSON.stringify(data));
-  }
-
   onFlashWick(marketWatcher: MarketWatcher, pair: string, msg: IKline) {
     if (this.tradePrevented) {
       this.debug('%o - Trade prevented', new Date());
@@ -138,7 +121,7 @@ export class MarketOrchestrator {
       if (isATradeDriverTransactionError(tradeResult)) {
         this.onTradeFailure(tradeDriver, tradeResult);
       } else {
-        this.recordTradeSummary(tradeDriver, tradeResult);
+        recordTradeSummary(tradeDriver, tradeResult);
         this.pnl.onEndOfTrade(tradeDriver, tradeResult);
         sendTradeResultNotification(tradeResult);
       }
