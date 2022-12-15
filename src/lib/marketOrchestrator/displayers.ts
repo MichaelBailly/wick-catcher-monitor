@@ -3,6 +3,7 @@ import { writeFile } from 'fs/promises';
 import { format } from 'date-fns';
 import { RECORDER_FILE_PATH } from '../../config';
 import { TradeResult } from '../../types/TradeResult';
+import { MarketOrchestrator } from '../marketOrchestrator';
 import { TradeDriver } from '../tradeDriver';
 import { TradeDriverTransactionError } from '../tradeDriver/TradeDriverTransactionError';
 import { getVolumeFamily } from '../volume/volumeReference';
@@ -42,4 +43,21 @@ export function recordTradeFailure(
     `Watcher: ${tradeDriver.confLine}`,
   ];
   writeFile(errorFilename, message.join('\n'));
+}
+
+export function displayAliveInfos(orchestrator: MarketOrchestrator) {
+  const summaryString = orchestrator.pnl.getSummary();
+
+  orchestrator.log(
+    '%so - Still alive, %d messages processed',
+    new Date(),
+    orchestrator.aliveCount
+  );
+  orchestrator.log(
+    '%d max concurrent trades, concurrent trades: %d',
+    orchestrator.maxConcurrentTrades,
+    orchestrator.getConcurrentTradesCount()
+  );
+  orchestrator.log(summaryString);
+  orchestrator.log('------------------------------------------------------');
 }

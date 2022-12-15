@@ -6,6 +6,7 @@ import { MarketWatcher } from '../types/MarketWatcher';
 import { TradeResult } from '../types/TradeResult';
 import { onBtcKline } from './BtcTrendRecorder';
 import {
+  displayAliveInfos,
   recordTradeFailure,
   recordTradeSummary,
 } from './marketOrchestrator/displayers';
@@ -80,20 +81,7 @@ export class MarketOrchestrator {
   aliveHook() {
     this.aliveCount++;
     if (Date.now() > this.aliveTimestamp) {
-      const summaryString = this.pnl.getSummary();
-
-      this.log(
-        '%so - Still alive, %d messages processed',
-        new Date(),
-        this.aliveCount
-      );
-      this.log(
-        '%d max concurrent trades, concurrent trades: %d',
-        this.maxConcurrentTrades,
-        this.getConcurrentTradesCount()
-      );
-      this.log(summaryString);
-      this.log('------------------------------------------------------');
+      displayAliveInfos(this);
       this.aliveTimestamp = Date.now() + ALIVE_TTL;
       this.aliveCount = 0;
     }
