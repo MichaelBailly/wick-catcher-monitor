@@ -61,10 +61,11 @@ export class MarketOrchestrator {
     const marketWatchers = this.collection.get(pair);
     for (const marketWatcher of marketWatchers) {
       marketWatcher.onKlineMessage(msg);
-      if (!this.watcherInhibiter.isInhibited(marketWatcher)) {
-        if (marketWatcher.detectFlashWick()) {
-          this.onFlashWick(marketWatcher, pair, msg);
-        }
+      if (
+        !this.watcherInhibiter.isInhibited(marketWatcher) &&
+        marketWatcher.detectFlashWick()
+      ) {
+        this.onFlashWick(marketWatcher, pair, msg);
       }
     }
   }
