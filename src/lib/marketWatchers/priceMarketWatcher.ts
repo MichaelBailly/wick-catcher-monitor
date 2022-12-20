@@ -1,9 +1,11 @@
 import { sub } from 'date-fns';
 import debug, { Debugger } from 'debug';
+import { PREDICTION_MODEL } from '../../config';
 import { IKline } from '../../types/IKline';
 import { PriceMarketWatcherOpts } from '../../types/PriceMarketWatcherOpts';
 import { TradeDriverOpts } from '../../types/TradeDriverOpts';
 import { BtcTrendRecorder, getBtcTrendRecorder } from '../BtcTrendRecorder';
+import { canTakeTrade } from '../predictionModel/runtime';
 import { getVolumeFamily } from '../volume/volumeReference';
 import { confLine } from './utils';
 
@@ -167,6 +169,9 @@ export class PriceMarketWatcher {
   }
 
   detectFlashWick() {
+    if (PREDICTION_MODEL && !canTakeTrade(this)) {
+      return false;
+    }
     if (
       this.volumeFamilies.length &&
       !this.volumeFamilies.includes(getVolumeFamily(this.pair) || '')

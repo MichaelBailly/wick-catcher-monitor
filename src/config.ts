@@ -22,3 +22,5 @@ export const BINANCE_SECRET = process.env.BINANCE_SECRET || null;
 
 export const FREE_SMS_API_USER = process.env.FREE_SMS_API_USER || null;
 export const FREE_SMS_API_PASSWORD = process.env.FREE_SMS_API_PASSWORD || null;
+
+export const PREDICTION_MODEL = process.env.PREDICTION_MODEL || null;

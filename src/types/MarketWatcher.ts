@@ -16,3 +16,7 @@ export type MarketWatcher = {
   getConfData: () => MarketWatcherConfData;
   getTradeDriverOpts: () => TradeDriverOpts;
 };
+
+export function isMarketWatcher(obj: any): obj is MarketWatcher {
+  return obj.pair && obj.d && obj.e && obj.minutes && obj.historySize;
+}

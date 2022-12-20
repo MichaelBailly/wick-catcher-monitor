@@ -1,7 +1,9 @@
 import debug from 'debug';
 import { readFile } from 'node:fs/promises';
+import { PREDICTION_MODEL } from './config';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
 import { MarketWatcherCollection } from './lib/marketWatcherCollection';
+import { start as startPredictionRuntime } from './lib/predictionModel/runtime';
 import {
   enableDailyUpdates,
   updateVolumeReference,
@@ -17,6 +19,22 @@ type Configuration = {
 };
 
 async function setupEnv() {
+  if (PREDICTION_MODEL) {
+    d('Using prediction model');
+    return setupEnvFromPredictionModel();
+  } else {
+    return setupEnvFromConfig();
+  }
+}
+
+async function setupEnvFromPredictionModel() {
+  const collection = new MarketWatcherCollection();
+  startPredictionRuntime(collection);
+  const orchestrator = new MarketOrchestrator(collection);
+  orchestrators.push(orchestrator);
+}
+
+async function setupEnvFromConfig() {
   const collection = new MarketWatcherCollection();
 
   const configFile = await readFile('config.json', 'utf-8');
