@@ -59,6 +59,5 @@ export function displayAliveInfos(orchestrator: MarketOrchestrator) {
     orchestrator.getConcurrentTradesCount()
   );
   orchestrator.log(summaryString);
-  orchestrator.collection.dump();
   orchestrator.log('------------------------------------------------------');
 }
