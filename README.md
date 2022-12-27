@@ -17,6 +17,7 @@ DEBUG="*,-*:debug" npm run dev
 - RECORDER_FILE_PATH="/tmp" : folder to write trade and daily summary files
 - MONGO_REFERENCES_DB="mongodb://localhost:27017/references" : MongoDB connection URI of references database
 - MONGO_VOLUME_COLLECTION="volume" : name of volume collection
+- MONGO_CMC_COLLECTION="cmc" : name of CoinMarketCap collection
 
 ### Files & Database (db updater)
 

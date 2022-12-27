@@ -13,6 +13,7 @@ export type TradeRecord = {
   low: number;
   pair: string;
   volumeFamily: string;
+  cmcFamily: string;
   soldAmount: number;
   soldPrice: number;
   pnl: number;

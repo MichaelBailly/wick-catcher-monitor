@@ -1,6 +1,10 @@
 import debug from 'debug';
 import { readFile } from 'node:fs/promises';
 import { PREDICTION_MODEL } from './config';
+import {
+  enableDailyUpdates as enableCMCDailyUpdates,
+  updateCMCReference,
+} from './lib/cmc';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
 import { MarketWatcherCollection } from './lib/marketWatcherCollection';
 import { start as startPredictionRuntime } from './lib/predictionModel/runtime';
@@ -56,6 +60,9 @@ async function setupEnvFromConfig() {
 async function run() {
   await updateVolumeReference();
   enableDailyUpdates();
+  await updateCMCReference();
+  enableCMCDailyUpdates();
+
   start(orchestrators);
   for (const orchestrator of orchestrators) {
     orchestrator.enableTradePrevent();

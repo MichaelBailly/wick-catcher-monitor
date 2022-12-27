@@ -8,6 +8,7 @@ export const MONGO_REFERENCES_DB =
   process.env.MONGO_REFERENCES_DB || 'mongodb://localhost:27017/references';
 export const MONGO_VOLUME_COLLECTION =
   process.env.MONGO_VOLUME_COLLECTION || 'volume';
+export const MONGO_CMC_COLLECTION = process.env.MONGO_CMC_COLLECTION || 'cmc';
 
 let maxConcurrentTrades;
 if (process.env.MAX_CONCURRENT_TRADES) {

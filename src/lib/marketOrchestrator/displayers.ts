@@ -3,6 +3,7 @@ import { writeFile } from 'fs/promises';
 import { format } from 'date-fns';
 import { RECORDER_FILE_PATH } from '../../config';
 import { TradeResult } from '../../types/TradeResult';
+import { getFamily } from '../cmc';
 import { MarketOrchestrator } from '../marketOrchestrator';
 import { TradeDriver } from '../tradeDriver';
 import { TradeDriverTransactionError } from '../tradeDriver/TradeDriverTransactionError';
@@ -17,9 +18,11 @@ export function recordTradeSummary(
     'yyyyMMddHHmm'
   )}.json`;
   const volumeFamily = getVolumeFamily(tradeResult.pair) || 'unknown';
+  const cmcFamily = getFamily(tradeResult.pair) || 'unknown';
   const data = {
     ...tradeResult,
     volumeFamily,
+    cmcFamily,
     watcher: {
       type: trade.confData.type,
       config: trade.confData.config,
