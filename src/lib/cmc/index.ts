@@ -2,7 +2,7 @@ import debug from 'debug';
 import { MongoClient } from 'mongodb';
 import { MONGO_CMC_COLLECTION, MONGO_REFERENCES_DB } from '../../config';
 
-const d = debug('volumeReferenceUpdater');
+const d = debug('cmc:index');
 let updateIntervalId: NodeJS.Timeout | null = null;
 
 export const cmcPairFamily = new Map<string, string>();
@@ -29,7 +29,7 @@ export async function updateCMCReference() {
     references.map((r) => ({ symbol: r.baseAsset, family: r.cmcFamily }))
   );
   await client.close();
-  d('volume references updated');
+  d('marketcap references updated');
 }
 
 export function enableDailyUpdates() {
@@ -39,7 +39,7 @@ export function enableDailyUpdates() {
       try {
         await updateCMCReference();
       } catch (e) {
-        d('error updating volume reference: %o', e);
+        d('error updating marketcap reference: %o', e);
       }
     }, diff);
   }, 1000 * 60 * 60 * 24);
