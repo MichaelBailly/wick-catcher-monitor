@@ -12,9 +12,9 @@ const log = debug('lib:tradeDriver:sellTransaction');
 const MAX_SELL_ATTEMPTS = 3;
 
 export async function sell(driver: TradeDriver) {
-  let attempts = 1;
+  let attempts = 0;
   let lastError;
-  while (attempts <= MAX_SELL_ATTEMPTS) {
+  while (attempts < MAX_SELL_ATTEMPTS) {
     try {
       return await sellTentative(driver);
     } catch (e) {
@@ -23,32 +23,59 @@ export async function sell(driver: TradeDriver) {
       attempts++;
     }
   }
-  if (lastError instanceof BinanceTransactionError && lastError.body) {
-    let errorBody;
-    try {
-      errorBody = JSON.parse(lastError.body);
-    } catch (e) {
-      log('Failed to JSON.parse Binance error');
-    }
-    if (errorBody?.code === -1013) {
-      log('-1013 LOT_SIZE error detected. Trying "decrease by one" strategy');
-      if (!driver.binanceBuyTransaction) {
-        throw new Error('No buy transaction found');
-      }
-      const newAmount = decreaseByOne(
-        driver.binanceBuyTransaction?.executedQty
-      );
-      log('forced amount: %d', newAmount);
-      try {
-        return await sellTentative(driver, newAmount);
-      } catch (e) {
-        log(`Error: %s sell attempt failed: %o`, driver.pair, e);
-        lastError = e;
-      }
-    }
+  log('End of first sell loop. Now trying alternative strategies');
+  log(
+    'lastError instanceof BinanceTransactionError? %o',
+    lastError instanceof BinanceTransactionError
+  );
+  log('lastError.body? %o', (lastError as BinanceTransactionError).body);
+  log(
+    'typeof lastError.body? %s',
+    typeof (lastError as BinanceTransactionError).body
+  );
+  if (!(lastError instanceof BinanceTransactionError)) {
+    throw new Error(`Failed to sell after ${attempts} attempts`);
   }
 
-  throw new Error(`Failed to sell after ${MAX_SELL_ATTEMPTS} attempts`);
+  // try to decrease by one
+  log('Trying "decrease by one" strategy');
+  const transactionResponse = await sellTentativeDecByOne(driver, lastError);
+  if (transactionResponse) {
+    return transactionResponse;
+  }
+  attempts++;
+  throw new Error(`Failed to sell after ${attempts} attempts`);
+}
+
+async function sellTentativeDecByOne(
+  driver: TradeDriver,
+  previousError: BinanceTransactionError
+) {
+  if (!previousError.body) {
+    throw new Error('No body found in previous error');
+  }
+
+  let errorBody;
+
+  try {
+    errorBody = JSON.parse(previousError.body);
+  } catch (e) {
+    log('Failed to JSON.parse Binance error');
+  }
+  if (errorBody?.code === -1013) {
+    log('-1013 LOT_SIZE error detected. Trying "decrease by one" strategy');
+    if (!driver.binanceBuyTransaction) {
+      throw new Error('No buy transaction found');
+    }
+    const newAmount = decreaseByOne(driver.binanceBuyTransaction?.executedQty);
+    log('forced amount: %d', newAmount);
+    try {
+      return await sellTentative(driver, newAmount);
+    } catch (e) {
+      log(`Error: %s sell attempt failed: %o`, driver.pair, e);
+      throw e;
+    }
+  }
 }
 
 export async function sellTentative(
