@@ -107,7 +107,7 @@ function createQueryString(params = {}) {
 
 type CreateOrderOpts = {
   quoteOrderQty?: number;
-  quantity?: number;
+  quantity?: number | string;
 };
 
 async function createOrder(pair: string, side: string, opts: CreateOrderOpts) {
@@ -159,7 +159,7 @@ export async function buy(pair: string, quoteOrderQty: number) {
   return createOrder(pair, 'BUY', { quoteOrderQty });
 }
 
-export async function sell(pair: string, quantity: number) {
+export async function sell(pair: string, quantity: number | string) {
   return createOrder(pair, 'SELL', { quantity });
 }
 

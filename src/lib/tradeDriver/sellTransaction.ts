@@ -38,13 +38,44 @@ export async function sell(driver: TradeDriver) {
   }
 
   // try to decrease by one
-  log('Trying "decrease by one" strategy');
-  const transactionResponse = await sellTentativeDecByOne(driver, lastError);
+  log('Trying "pass string" strategy');
+  const transactionResponse = await sellTentativePassString(driver, lastError);
   if (transactionResponse) {
     return transactionResponse;
   }
   attempts++;
   throw new Error(`Failed to sell after ${attempts} attempts`);
+}
+
+async function sellTentativePassString(
+  driver: TradeDriver,
+  previousError: BinanceTransactionError
+) {
+  if (!previousError.body) {
+    throw new Error('No body found in previous error');
+  }
+
+  let errorBody;
+
+  try {
+    errorBody = JSON.parse(previousError.body);
+  } catch (e) {
+    log('Failed to JSON.parse Binance error');
+  }
+  if (errorBody?.code === -1013) {
+    log('-1013 LOT_SIZE error detected. Trying "decrease by one" strategy');
+    if (!driver.binanceBuyTransaction) {
+      throw new Error('No buy transaction found');
+    }
+    const newAmount = driver.binanceBuyTransaction.executedQty;
+    log('forced amount: %d', newAmount);
+    try {
+      return await sellTentative(driver, newAmount, 'passString');
+    } catch (e) {
+      log(`Error: %s sell attempt failed: %o`, driver.pair, e);
+      throw e;
+    }
+  }
 }
 
 async function sellTentativeDecByOne(
@@ -80,7 +111,7 @@ async function sellTentativeDecByOne(
 
 export async function sellTentative(
   driver: TradeDriver,
-  forcedAmount: number | undefined = undefined,
+  forcedAmount: number | string | undefined = undefined,
   strategy: string | undefined = undefined
 ) {
   if (!driver.binanceBuyTransaction) {
@@ -146,8 +177,8 @@ function getSellAmount(qty: number, pair: string) {
 export async function recordTransactionArgs(
   pair: string,
   qty: string,
-  executedQty: number,
-  amount: number
+  executedQty: number | string,
+  amount: number | string
 ) {
   const filename = `${RECORDER_FILE_PATH}/binance-transaction-args-${format(
     new Date(),
