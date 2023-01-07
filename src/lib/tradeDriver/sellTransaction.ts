@@ -140,7 +140,7 @@ export async function sellTentative(
     response = await binanceSell(driver.pair, amount);
   } catch (e) {
     if (e instanceof BinanceTransactionError || e instanceof Error) {
-      onTransactionError(e);
+      await onTransactionError(e);
     } else {
       console.log('ERROR: unexpected error type');
       console.log(e);
