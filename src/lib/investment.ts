@@ -1,6 +1,5 @@
 import debug from 'debug';
 import { readFile, writeFile } from 'fs/promises';
-import path from 'path';
 import { USE_ADAPTATIVE_INVESTMENT } from '../config';
 import { TradeResult } from '../types/TradeResult';
 import { Watcher } from '../types/Watcher';
@@ -9,16 +8,14 @@ type InvestmentStatusHash = Record<string, number>;
 
 export const BASE_INVESTMENT = 100;
 const d = debug('lib:investment');
+const investmentStatusFile = './investment-status.json';
 let saveInvestmentStatusInterval: NodeJS.Timeout;
 
 let investmentStatus = {} as InvestmentStatusHash;
 
 async function loadInvestmentStatus() {
   try {
-    const investmentStatusString = await readFile(
-      path.join(__dirname, '../investment-status.json'),
-      'utf8'
-    );
+    const investmentStatusString = await readFile(investmentStatusFile, 'utf8');
     investmentStatus = JSON.parse(investmentStatusString);
   } catch (error) {
     investmentStatus = {};
@@ -57,10 +54,9 @@ function getWatcherHash(watcher: Watcher) {
 }
 
 async function recordInvestmentStatus() {
-  return writeFile(
-    './investment-status.json',
-    JSON.stringify(investmentStatus)
-  ).then(() => d('investmentStatus saved'));
+  return writeFile(investmentStatusFile, JSON.stringify(investmentStatus)).then(
+    () => d('investmentStatus saved')
+  );
 }
 
 export async function start() {
