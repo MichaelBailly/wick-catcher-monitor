@@ -1,10 +1,11 @@
 import debug from 'debug';
 import { readFile } from 'node:fs/promises';
-import { PREDICTION_MODEL } from './config';
+import { PREDICTION_MODEL, USE_ADAPTATIVE_INVESTMENT } from './config';
 import {
   enableDailyUpdates as enableCMCDailyUpdates,
   updateCMCReference,
 } from './lib/cmc';
+import { start as startInvestmentUpdater } from './lib/investment';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
 import { MarketWatcherCollection } from './lib/marketWatcherCollection';
 import { start as startPredictionRuntime } from './lib/predictionModel/runtime';
@@ -58,6 +59,9 @@ async function setupEnvFromConfig() {
 }
 
 async function run() {
+  if (USE_ADAPTATIVE_INVESTMENT) {
+    await startInvestmentUpdater();
+  }
   await updateVolumeReference();
   enableDailyUpdates();
   await updateCMCReference();

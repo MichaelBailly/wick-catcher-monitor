@@ -1,10 +1,11 @@
 import debug from 'debug';
 import { readFile, stat, unlink } from 'fs/promises';
-import { MAX_CONCURRENT_TRADES } from '../config';
+import { MAX_CONCURRENT_TRADES, USE_ADAPTATIVE_INVESTMENT } from '../config';
 import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
 import { TradeResult } from '../types/TradeResult';
 import { onBtcKline } from './BtcTrendRecorder';
+import { getInvestment, updateInvestment } from './investment';
 import {
   displayAliveInfos,
   recordTradeFailure,
@@ -115,15 +116,17 @@ export class MarketOrchestrator {
         recordTradeSummary(tradeDriver, tradeResult);
         this.pnl.onEndOfTrade(tradeDriver, tradeResult);
         sendTradeResultNotification(tradeResult);
+        updateInvestment(marketWatcher.getConfData(), tradeResult);
       }
       this.log('concurrent trades: %d', this.getConcurrentTradesCount());
     };
 
-    const tradeDriver = new TradeDriver(
-      marketWatcher,
-      onEndOfTrade,
-      marketWatcher.getTradeDriverOpts()
-    );
+    const opts = marketWatcher.getTradeDriverOpts();
+    if (USE_ADAPTATIVE_INVESTMENT) {
+      opts.quoteAmount = getInvestment(marketWatcher.getConfData());
+    }
+
+    const tradeDriver = new TradeDriver(marketWatcher, onEndOfTrade, opts);
     tradeDriver.start();
 
     this.addToTradeDriverSet(pair, tradeDriver);

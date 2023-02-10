@@ -25,3 +25,6 @@ export const FREE_SMS_API_USER = process.env.FREE_SMS_API_USER || null;
 export const FREE_SMS_API_PASSWORD = process.env.FREE_SMS_API_PASSWORD || null;
 
 export const PREDICTION_MODEL = process.env.PREDICTION_MODEL || null;
+
+export const USE_ADAPTATIVE_INVESTMENT =
+  process.env.USE_ADAPTATIVE_INVESTMENT === 'true' ? true : false;
