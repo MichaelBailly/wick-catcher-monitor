@@ -251,8 +251,7 @@ export class TradeDriver {
     this.onSold(
       exchangeResponse.value.amount,
       exchangeResponse.value.price,
-      exchangeResponse.value.doneTimestamp,
-      exchangeResponse.value.strategy
+      exchangeResponse.value.doneTimestamp
     );
   }
 
