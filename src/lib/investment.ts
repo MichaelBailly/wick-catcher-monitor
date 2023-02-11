@@ -31,7 +31,6 @@ export function getInvestment(watcher: Watcher): number {
   if (investmentStatus[watcherHash]) {
     return investmentStatus[watcherHash];
   } else {
-    investmentStatus[watcherHash] = BASE_INVESTMENT;
     return BASE_INVESTMENT;
   }
 }
@@ -47,6 +46,13 @@ export function updateInvestment(watcher: Watcher, result: TradeResult) {
     parseInt(result.details.buyTransaction.cummulativeQuoteQty, 10);
   const investment = getInvestment(watcher);
   investmentStatus[watcherHash] = Math.ceil(investment + pnl / 2);
+  d(
+    '%s: investmentStatus updated: %d -> %d. (PnL %d)',
+    watcherHash,
+    investment,
+    investmentStatus[watcherHash],
+    pnl
+  );
 }
 
 function getWatcherHash(watcher: Watcher) {
