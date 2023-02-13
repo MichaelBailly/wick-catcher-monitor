@@ -15,11 +15,13 @@ let saveInvestmentStatusInterval: NodeJS.Timeout;
 
 let investmentStatus = {} as InvestmentStatusHash;
 
-events.on('tradeEnd', (event: TradeEndEvent) => {
-  if (isTradeResult(event.tradeResult)) {
-    updateInvestment(event.marketWatcher.getConfData(), event.tradeResult);
-  }
-});
+if (USE_ADAPTATIVE_INVESTMENT) {
+  events.on('tradeEnd', (event: TradeEndEvent) => {
+    if (isTradeResult(event.tradeResult)) {
+      updateInvestment(event.marketWatcher.getConfData(), event.tradeResult);
+    }
+  });
+}
 
 async function loadInvestmentStatus() {
   try {
