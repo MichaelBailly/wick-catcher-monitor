@@ -8,9 +8,9 @@
     "dev": "bob-tsm --node-env=development --watch=src src/index.ts",
     "debug": "bob-tsm --node-env=development --watch=src --inspect src/index.ts",
     "start": "bob-tsm --node-env=prod src/index.ts",
-    "build": "ncc build src/index.ts -o dist --target es2020",
-    "upload": "ncc build src/uploader.ts -o dist/uploader --target es2020",
-    "expandConfig": "ncc build src/configExpander.ts -o dist/expand --target es2020"
+    "build": "ncc build src/index.ts -o dist --target es2022",
+    "upload": "ncc build src/uploader.ts -o dist/uploader --target es2022",
+    "expandConfig": "ncc build src/configExpander.ts -o dist/expand --target es2022"
   },
   "author": "",
   "license": "ISC",
