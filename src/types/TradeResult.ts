@@ -1,6 +1,6 @@
 import { BinanceOrderResponse } from './BinanceOrderResponse';
 import { SimulationResponse } from './SimulationResponse';
-import { TradeInfo } from './TradeInfo';
+import { isTradeInfo, TradeInfo } from './TradeInfo';
 
 export type TradeResult = TradeInfo & {
   pair: string;
@@ -14,3 +14,18 @@ export type TradeResult = TradeInfo & {
     sellTransaction: BinanceOrderResponse;
   };
 };
+
+export function isTradeResult(object: unknown): object is TradeResult {
+  return (
+    typeof object === 'object' &&
+    object !== null &&
+    isTradeInfo(object as TradeInfo) &&
+    'pair' in object &&
+    'soldTimestamp' in object &&
+    'soldAmount' in object &&
+    'soldPrice' in object &&
+    'buyTimestamp' in object &&
+    'buyAmount' in object &&
+    'buyPrice' in object
+  );
+}
