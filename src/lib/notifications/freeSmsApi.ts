@@ -1,10 +1,33 @@
 import debug from 'debug';
 import { FREE_SMS_API_PASSWORD, FREE_SMS_API_USER } from '../../config';
+import { TradeEndEvent } from '../../types/TradeEndEvent';
 import { TradeResult } from '../../types/TradeResult';
+import { events } from '../events';
 import { TradeDriver } from '../tradeDriver';
-import { TradeDriverTransactionError } from '../tradeDriver/TradeDriverTransactionError';
+import { TradeDriverSellError } from '../tradeDriver/TradeDriverSellError';
+import {
+  isATradeDriverTransactionError,
+  TradeDriverTransactionError,
+} from '../tradeDriver/TradeDriverTransactionError';
 
 const log = debug('notifications:freesmsapi');
+
+events.on('tradeEnd', async (event: TradeEndEvent) => {
+  const { tradeDriver, tradeResult } = event;
+  if (isATradeDriverTransactionError(tradeResult)) {
+    let transactionType = 'Buy';
+    if (tradeResult instanceof TradeDriverSellError) {
+      transactionType = 'Sell';
+    }
+    if (transactionType === 'Buy') {
+      sendBuyFailureNotification(tradeDriver, tradeResult);
+    } else {
+      sendSellFailureNotification(tradeDriver, tradeResult);
+    }
+  } else {
+    sendTradeResultNotification(tradeResult);
+  }
+});
 
 export async function sendTradeResultNotification(tradeResult: TradeResult) {
   const pnl = (

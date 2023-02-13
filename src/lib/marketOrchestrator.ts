@@ -5,6 +5,7 @@ import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
 import { TradeResult } from '../types/TradeResult';
 import { onBtcKline } from './BtcTrendRecorder';
+import { events } from './events';
 import { getInvestment, updateInvestment } from './investment';
 import {
   displayAliveInfos,
@@ -13,11 +14,6 @@ import {
 } from './marketOrchestrator/displayers';
 import { MarketWatcherInhibitor } from './marketOrchestrator/watcherInhibitor';
 import { MarketWatcherCollection } from './marketWatcherCollection';
-import {
-  sendBuyFailureNotification,
-  sendSellFailureNotification,
-  sendTradeResultNotification,
-} from './notifications/freeSmsApi';
 import { Pnl } from './pnl';
 import { TradeDriver } from './tradeDriver';
 import { TradeDriverSellError } from './tradeDriver/TradeDriverSellError';
@@ -115,10 +111,10 @@ export class MarketOrchestrator {
       } else {
         recordTradeSummary(tradeDriver, tradeResult);
         this.pnl.onEndOfTrade(tradeDriver, tradeResult);
-        sendTradeResultNotification(tradeResult);
         updateInvestment(marketWatcher.getConfData(), tradeResult);
       }
       this.log('concurrent trades: %d', this.getConcurrentTradesCount());
+      events.emit('tradeEnd', { tradeDriver, tradeResult, marketWatcher });
     };
 
     const opts = marketWatcher.getTradeDriverOpts();
@@ -142,9 +138,7 @@ export class MarketOrchestrator {
       tradeResult.parent.message,
       tradeResult.message
     );
-    let transactionType = 'Buy';
     if (tradeResult instanceof TradeDriverSellError) {
-      transactionType = 'Sell';
       this.maxConcurrentTrades -= 1;
       this.log(
         'Sell error: decreased concurrent trades to %d',
@@ -153,12 +147,6 @@ export class MarketOrchestrator {
     }
 
     recordTradeFailure(tradeDriver, tradeResult);
-
-    if (transactionType === 'Buy') {
-      sendBuyFailureNotification(tradeDriver, tradeResult);
-    } else {
-      sendSellFailureNotification(tradeDriver, tradeResult);
-    }
   }
 
   removeFromTradeDriverSet(pair: string, tradeDriver: TradeDriver) {
