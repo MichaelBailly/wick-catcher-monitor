@@ -28,6 +28,7 @@ events.on('tradeEnd', async (event: TradeEndEvent) => {
     sendTradeResultNotification(tradeResult);
   }
 });
+log('registered to tradeEnd event');
 
 export async function sendTradeResultNotification(tradeResult: TradeResult) {
   const pnl = (

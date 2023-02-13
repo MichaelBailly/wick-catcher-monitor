@@ -15,14 +15,6 @@ let saveInvestmentStatusInterval: NodeJS.Timeout;
 
 let investmentStatus = {} as InvestmentStatusHash;
 
-if (USE_ADAPTATIVE_INVESTMENT) {
-  events.on('tradeEnd', (event: TradeEndEvent) => {
-    if (isTradeResult(event.tradeResult)) {
-      updateInvestment(event.marketWatcher.getConfData(), event.tradeResult);
-    }
-  });
-}
-
 async function loadInvestmentStatus() {
   try {
     const investmentStatusString = await readFile(investmentStatusFile, 'utf8');
@@ -76,9 +68,19 @@ async function recordInvestmentStatus() {
 }
 
 export async function start() {
-  await loadInvestmentStatus();
-  saveInvestmentStatusInterval = setInterval(
-    recordInvestmentStatus,
-    1000 * 60 * 30
-  );
+  if (USE_ADAPTATIVE_INVESTMENT) {
+    events.on('tradeEnd', (event: TradeEndEvent) => {
+      if (isTradeResult(event.tradeResult)) {
+        updateInvestment(event.marketWatcher.getConfData(), event.tradeResult);
+      }
+    });
+    d('registered tradeEnd event listener');
+    await loadInvestmentStatus();
+    saveInvestmentStatusInterval = setInterval(
+      recordInvestmentStatus,
+      1000 * 60 * 30
+    );
+  } else {
+    d('Adaptative investment disabled');
+  }
 }
