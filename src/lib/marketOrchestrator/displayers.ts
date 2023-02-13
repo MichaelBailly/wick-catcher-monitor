@@ -15,7 +15,7 @@ export function recordTradeSummary(
 ) {
   const filename = `${RECORDER_FILE_PATH}/trade-${trade.confLine}-${format(
     new Date(),
-    'yyyyMMddHHmmss'
+    'yyyyMMddHHmmssSSS'
   )}.json`;
   const volumeFamily = getVolumeFamily(tradeResult.pair) || 'unknown';
   const cmcFamily = getFamily(tradeResult.pair) || 'unknown';
