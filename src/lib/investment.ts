@@ -42,16 +42,16 @@ export function updateInvestment(watcher: Watcher, result: TradeResult) {
   const watcherHash = getWatcherHash(watcher);
 
   const pnl =
-    parseInt(result.details.sellTransaction.cummulativeQuoteQty, 10) -
-    parseInt(result.details.buyTransaction.cummulativeQuoteQty, 10);
+    parseFloat(result.details.sellTransaction.cummulativeQuoteQty) -
+    parseFloat(result.details.buyTransaction.cummulativeQuoteQty);
   const investment = getInvestment(watcher);
   investmentStatus[watcherHash] = Math.ceil(investment + pnl / 2);
   d(
-    '%s: investmentStatus updated: %d -> %d. (PnL %d)',
+    '%s: investmentStatus updated: %d -> %d. (PnL %s)',
     watcherHash,
     investment,
     investmentStatus[watcherHash],
-    pnl
+    pnl.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
   );
 }
 
