@@ -6,7 +6,7 @@ import { MarketWatcher } from '../types/MarketWatcher';
 import { TradeResult } from '../types/TradeResult';
 import { onBtcKline } from './BtcTrendRecorder';
 import { events } from './events';
-import { getInvestment, updateInvestment } from './investment';
+import { getInvestment } from './investment';
 import {
   displayAliveInfos,
   recordTradeFailure,
@@ -111,7 +111,6 @@ export class MarketOrchestrator {
       } else {
         recordTradeSummary(tradeDriver, tradeResult);
         this.pnl.onEndOfTrade(tradeDriver, tradeResult);
-        updateInvestment(marketWatcher.getConfData(), tradeResult);
       }
       this.log('concurrent trades: %d', this.getConcurrentTradesCount());
       events.emit('tradeEnd', { tradeDriver, tradeResult, marketWatcher });

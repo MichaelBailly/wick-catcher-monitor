@@ -1,8 +1,10 @@
 import debug from 'debug';
 import { readFile, writeFile } from 'fs/promises';
 import { USE_ADAPTATIVE_INVESTMENT } from '../config';
-import { TradeResult } from '../types/TradeResult';
+import { TradeEndEvent } from '../types/TradeEndEvent';
+import { isTradeResult, TradeResult } from '../types/TradeResult';
 import { Watcher } from '../types/Watcher';
+import { events } from './events';
 
 type InvestmentStatusHash = Record<string, number>;
 
@@ -12,6 +14,12 @@ const investmentStatusFile = './investment-status.json';
 let saveInvestmentStatusInterval: NodeJS.Timeout;
 
 let investmentStatus = {} as InvestmentStatusHash;
+
+events.on('tradeEnd', (event: TradeEndEvent) => {
+  if (isTradeResult(event.tradeResult)) {
+    updateInvestment(event.marketWatcher.getConfData(), event.tradeResult);
+  }
+});
 
 async function loadInvestmentStatus() {
   try {
