@@ -5,7 +5,7 @@ import { IKline } from '../types/IKline';
 import { MarketWatcher } from '../types/MarketWatcher';
 import { TradeResult } from '../types/TradeResult';
 import { onBtcKline } from './BtcTrendRecorder';
-import { events } from './events';
+import { events, TRADE_END_EVENT } from './events';
 import { getInvestment } from './investment';
 import {
   displayAliveInfos,
@@ -42,6 +42,7 @@ export class MarketOrchestrator {
 
   constructor(private marketWatcherCollection: MarketWatcherCollection) {
     this.collection = marketWatcherCollection;
+    events.on(TRADE_END_EVENT, () => console.log('tradeEnd'));
   }
 
   onKline(pair: string, msg: IKline) {
@@ -113,7 +114,7 @@ export class MarketOrchestrator {
         this.pnl.onEndOfTrade(tradeDriver, tradeResult);
       }
       this.log('concurrent trades: %d', this.getConcurrentTradesCount());
-      events.emit('tradeEnd', { tradeDriver, tradeResult, marketWatcher });
+      events.emit(TRADE_END_EVENT, { tradeDriver, tradeResult, marketWatcher });
     };
 
     const opts = marketWatcher.getTradeDriverOpts();

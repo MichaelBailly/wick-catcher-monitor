@@ -2,7 +2,7 @@ import debug from 'debug';
 import { FREE_SMS_API_PASSWORD, FREE_SMS_API_USER } from '../../config';
 import { TradeEndEvent } from '../../types/TradeEndEvent';
 import { TradeResult } from '../../types/TradeResult';
-import { events } from '../events';
+import { events, TRADE_END_EVENT } from '../events';
 import { TradeDriver } from '../tradeDriver';
 import { TradeDriverSellError } from '../tradeDriver/TradeDriverSellError';
 import {
@@ -12,7 +12,8 @@ import {
 
 const log = debug('notifications:freesmsapi');
 
-events.on('tradeEnd', async (event: TradeEndEvent) => {
+events.on(TRADE_END_EVENT, async (event: TradeEndEvent) => {
+  log('tradeEnd - freeSmsApi handler');
   const { tradeDriver, tradeResult } = event;
   if (isATradeDriverTransactionError(tradeResult)) {
     let transactionType = 'Buy';

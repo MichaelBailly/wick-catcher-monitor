@@ -17,15 +17,10 @@ export type TradeResult = TradeInfo & {
 
 export function isTradeResult(object: unknown): object is TradeResult {
   return (
-    typeof object === 'object' &&
-    object !== null &&
-    isTradeInfo(object as TradeInfo) &&
-    'pair' in object &&
-    'soldTimestamp' in object &&
-    'soldAmount' in object &&
-    'soldPrice' in object &&
-    'buyTimestamp' in object &&
-    'buyAmount' in object &&
-    'buyPrice' in object
+    isTradeInfo(object) &&
+    typeof (object as TradeResult).pair === 'string' &&
+    typeof (object as TradeResult).soldTimestamp === 'number' &&
+    typeof (object as TradeResult).soldAmount === 'number' &&
+    typeof (object as TradeResult).soldPrice === 'number'
   );
 }

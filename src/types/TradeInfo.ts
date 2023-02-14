@@ -13,13 +13,13 @@ export function isTradeInfo(object: unknown): object is TradeInfo {
   return (
     typeof object === 'object' &&
     object !== null &&
-    'id' in object &&
-    'amount' in object &&
-    'quoteAmount' in object &&
-    'price' in object &&
-    'buyTimestamp' in object &&
-    'boughtTimestamp' in object &&
-    'sellTimestamp' in object &&
-    'low' in object
+    typeof (object as TradeInfo).id === 'string' &&
+    typeof (object as TradeInfo).amount === 'number' &&
+    typeof (object as TradeInfo).quoteAmount === 'number' &&
+    typeof (object as TradeInfo).price === 'number' &&
+    typeof (object as TradeInfo).buyTimestamp === 'number' &&
+    typeof (object as TradeInfo).boughtTimestamp === 'number' &&
+    typeof (object as TradeInfo).sellTimestamp === 'number' &&
+    typeof (object as TradeInfo).low === 'number'
   );
 }

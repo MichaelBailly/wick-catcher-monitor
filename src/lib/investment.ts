@@ -4,7 +4,7 @@ import { USE_ADAPTATIVE_INVESTMENT } from '../config';
 import { TradeEndEvent } from '../types/TradeEndEvent';
 import { isTradeResult, TradeResult } from '../types/TradeResult';
 import { Watcher } from '../types/Watcher';
-import { events } from './events';
+import { events, TRADE_END_EVENT } from './events';
 
 type InvestmentStatusHash = Record<string, number>;
 
@@ -69,7 +69,7 @@ async function recordInvestmentStatus() {
 
 export async function start() {
   if (USE_ADAPTATIVE_INVESTMENT) {
-    events.on('tradeEnd', (event: TradeEndEvent) => {
+    events.on(TRADE_END_EVENT, (event: TradeEndEvent) => {
       if (isTradeResult(event.tradeResult)) {
         updateInvestment(event.marketWatcher.getConfData(), event.tradeResult);
       }
