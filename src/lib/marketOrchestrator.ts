@@ -42,7 +42,6 @@ export class MarketOrchestrator {
 
   constructor(private marketWatcherCollection: MarketWatcherCollection) {
     this.collection = marketWatcherCollection;
-    events.on(TRADE_END_EVENT, () => console.log('tradeEnd'));
   }
 
   onKline(pair: string, msg: IKline) {
