@@ -12,25 +12,6 @@ import {
 
 const log = debug('notifications:freesmsapi');
 
-events.on(TRADE_END_EVENT, async (event: TradeEndEvent) => {
-  log('tradeEnd - freeSmsApi handler');
-  const { tradeDriver, tradeResult } = event;
-  if (isATradeDriverTransactionError(tradeResult)) {
-    let transactionType = 'Buy';
-    if (tradeResult instanceof TradeDriverSellError) {
-      transactionType = 'Sell';
-    }
-    if (transactionType === 'Buy') {
-      sendBuyFailureNotification(tradeDriver, tradeResult);
-    } else {
-      sendSellFailureNotification(tradeDriver, tradeResult);
-    }
-  } else {
-    sendTradeResultNotification(tradeResult);
-  }
-});
-log('registered to tradeEnd event');
-
 export async function sendTradeResultNotification(tradeResult: TradeResult) {
   const pnl = (
     tradeResult.soldAmount * tradeResult.soldPrice -
@@ -85,4 +66,29 @@ async function sendSms(message: string) {
   } catch (e) {
     log('Error sending sms: %o', e);
   }
+}
+
+export function start() {
+  if (!FREE_SMS_API_USER || !FREE_SMS_API_PASSWORD) {
+    log('no credentials, skipping');
+    return;
+  }
+  events.on(TRADE_END_EVENT, async (event: TradeEndEvent) => {
+    log('tradeEnd - freeSmsApi handler');
+    const { tradeDriver, tradeResult } = event;
+    if (isATradeDriverTransactionError(tradeResult)) {
+      let transactionType = 'Buy';
+      if (tradeResult instanceof TradeDriverSellError) {
+        transactionType = 'Sell';
+      }
+      if (transactionType === 'Buy') {
+        sendBuyFailureNotification(tradeDriver, tradeResult);
+      } else {
+        sendSellFailureNotification(tradeDriver, tradeResult);
+      }
+    } else {
+      sendTradeResultNotification(tradeResult);
+    }
+  });
+  log('registered to tradeEnd event');
 }

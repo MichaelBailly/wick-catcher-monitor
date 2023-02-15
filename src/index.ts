@@ -8,6 +8,7 @@ import {
 import { start as startInvestmentUpdater } from './lib/investment';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
 import { MarketWatcherCollection } from './lib/marketWatcherCollection';
+import { start as startFreeSms } from './lib/notifications/freeSmsApi';
 import { start as startPredictionRuntime } from './lib/predictionModel/runtime';
 import {
   enableDailyUpdates,
@@ -59,6 +60,7 @@ async function setupEnvFromConfig() {
 }
 
 async function run() {
+  startFreeSms();
   if (USE_ADAPTATIVE_INVESTMENT) {
     await startInvestmentUpdater();
   }
