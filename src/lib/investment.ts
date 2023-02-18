@@ -47,7 +47,7 @@ export function updateInvestment(watcher: Watcher, result: TradeResult) {
     parseFloat(result.details.sellTransaction.cummulativeQuoteQty) -
     parseFloat(result.details.buyTransaction.cummulativeQuoteQty);
   const investment = getInvestment(watcher);
-  investmentStatus[watcherHash] = Math.ceil(investment + pnl / 2);
+  investmentStatus[watcherHash] = Math.floor(investment + pnl / 2);
   d(
     '%s: investmentStatus updated: %d -> %d. (PnL %s)',
     watcherHash,
