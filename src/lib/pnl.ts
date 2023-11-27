@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { MarketWatcherConfData } from '../types/MarketWatcherConfData';
-import { TradeResult } from '../types/TradeResult';
+import { TradeEndEvent } from '../types/TradeEndEvent';
+import { isTradeResult, TradeResult } from '../types/TradeResult';
 import { TradeDriver } from './tradeDriver';
 
 type PnlSummary = {
@@ -8,6 +9,16 @@ type PnlSummary = {
   failed: number;
   pnl: number;
 };
+
+function start() {
+  const pnl = new Pnl();
+  function onTradeEnd(event: TradeEndEvent) {
+    const { tradeDriver, tradeResult } = event;
+    if (isTradeResult(tradeResult)) {
+      pnl.onEndOfTrade(tradeDriver, tradeResult);
+    }
+  }
+}
 
 function confDataHash(confData: MarketWatcherConfData): string {
   return `${confData.type} ${confData.config}`;
