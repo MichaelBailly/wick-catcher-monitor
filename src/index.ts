@@ -5,6 +5,7 @@ import {
   enableDailyUpdates as enableCMCDailyUpdates,
   updateCMCReference,
 } from './lib/cmc';
+import { startFixedPricesConfigUpdates } from './lib/fixedPrice';
 import { start as startInvestmentUpdater } from './lib/investment';
 import { MarketOrchestrator } from './lib/marketOrchestrator';
 import { MarketWatcherCollection } from './lib/marketWatcherCollection';
@@ -53,6 +54,12 @@ async function setupEnvFromConfig() {
     if (watcher.type === 'volume') {
       collection.addVolumeMarketWatcher(watcher.opts, watcher.tradeDriverOpts);
     }
+    if (watcher.type === 'fixedPrice') {
+      collection.addFixedPriceMarketWatcher(
+        watcher.opts,
+        watcher.tradeDriverOpts
+      );
+    }
   }
 
   const orchestrator = new MarketOrchestrator(collection);
@@ -68,6 +75,8 @@ async function run() {
   enableDailyUpdates();
   await updateCMCReference();
   enableCMCDailyUpdates();
+
+  startFixedPricesConfigUpdates();
 
   start(orchestrators);
   for (const orchestrator of orchestrators) {

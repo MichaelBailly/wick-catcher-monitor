@@ -8,4 +8,5 @@ export type TradeDriverOpts = {
   priceRatio?: number;
   dynamicStopLoss?: number;
   dynamicStopLossRatio?: number;
+  buyOnly?: boolean;
 };

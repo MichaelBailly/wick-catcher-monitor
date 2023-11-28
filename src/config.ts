@@ -28,3 +28,6 @@ export const PREDICTION_MODEL = process.env.PREDICTION_MODEL || null;
 
 export const USE_ADAPTATIVE_INVESTMENT =
   process.env.USE_ADAPTATIVE_INVESTMENT === 'true' ? true : false;
+
+export const FIXED_PRICES_FILE_PATH =
+  process.env.FIXED_PRICES_FILE_PATH || null;

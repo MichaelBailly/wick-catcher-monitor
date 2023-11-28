@@ -1,8 +1,10 @@
+import { FixedPriceMarketWatcherOpts } from '../types/FixedPriceMarketWatcherOpts';
 import { MarketProfile } from '../types/MarketProfile';
 import { isMarketWatcher, MarketWatcher } from '../types/MarketWatcher';
 import { PriceMarketWatcherOpts } from '../types/PriceMarketWatcherOpts';
 import { TradeDriverOpts } from '../types/TradeDriverOpts';
 import { VolumeMarketWatcherOpts } from '../types/VolumeMarketWatcherOpts';
+import { FixedPriceMarketWatcher } from './marketWatchers/fixedPriceMarketWatcher';
 import { PriceMarketWatcher } from './marketWatchers/priceMarketWatcher';
 import { VolumeMarketWatcher } from './marketWatchers/volumeMarketWatcher';
 
@@ -27,6 +29,14 @@ export class MarketWatcherCollection {
         } else if (marketWatcherType.type === 'volume') {
           marketWatchers.push(
             new VolumeMarketWatcher(
+              pair,
+              { ...marketWatcherType.opts },
+              { ...marketWatcherType.tradeDriverOpts }
+            )
+          );
+        } else if (marketWatcherType.type === 'fixedPrice') {
+          marketWatchers.push(
+            new FixedPriceMarketWatcher(
               pair,
               { ...marketWatcherType.opts },
               { ...marketWatcherType.tradeDriverOpts }
@@ -57,6 +67,17 @@ export class MarketWatcherCollection {
   ) {
     this.marketWatcherTypes.add({
       type: 'volume',
+      opts: { ...opts },
+      tradeDriverOpts,
+    });
+  }
+
+  addFixedPriceMarketWatcher(
+    opts: FixedPriceMarketWatcherOpts,
+    tradeDriverOpts: TradeDriverOpts = {}
+  ) {
+    this.marketWatcherTypes.add({
+      type: 'fixedPrice',
       opts: { ...opts },
       tradeDriverOpts,
     });
@@ -98,6 +119,14 @@ export class MarketWatcherCollection {
         } else if (type.type === 'volume') {
           newMarketWatchers.push(
             new VolumeMarketWatcher(
+              pair,
+              { ...type.opts },
+              { ...type.tradeDriverOpts }
+            )
+          );
+        } else if (type.type === 'fixedPrice') {
+          newMarketWatchers.push(
+            new FixedPriceMarketWatcher(
               pair,
               { ...type.opts },
               { ...type.tradeDriverOpts }

@@ -9,11 +9,11 @@ import { SimulationResponse } from '../types/SimulationResponse';
 import { TradeDriverOpts } from '../types/TradeDriverOpts';
 import { TradeInfo } from '../types/TradeInfo';
 import { TradeResult } from '../types/TradeResult';
-import { buy } from './tradeDriver/buyTransaction';
-import { sell } from './tradeDriver/sellTransaction';
 import { TradeDriverBuyError } from './tradeDriver/TradeDriverBuyError';
 import { TradeDriverSellError } from './tradeDriver/TradeDriverSellError';
 import { TradeDriverTransactionError } from './tradeDriver/TradeDriverTransactionError';
+import { buy } from './tradeDriver/buyTransaction';
+import { sell } from './tradeDriver/sellTransaction';
 
 enum TradeState {
   NONE,
@@ -87,6 +87,11 @@ export class TradeDriver {
   dynamicStopLoss: number;
   dynamicStopLossRatio: number;
 
+  /**
+   * @description If true, the trade driver will only buy and never sell
+   */
+  buyOnly: boolean = false;
+
   constructor(
     marketWatcher: MarketWatcher,
     onSold: (trade: TradeResult | TradeDriverTransactionError) => void,
@@ -106,6 +111,7 @@ export class TradeDriver {
     this.priceRatio = opts?.priceRatio || 1.05;
     this.dynamicStopLoss = opts?.dynamicStopLoss || 0;
     this.dynamicStopLossRatio = opts?.dynamicStopLossRatio || 0.9;
+    this.buyOnly = opts?.buyOnly || false;
     this.lastKline = this.history[0];
     this.info = debug(`tradeDriver:${this.pair}:info`);
     this.debug = debug(`tradeDriver:${this.pair}:debug`);
@@ -192,6 +198,12 @@ export class TradeDriver {
       boughtTimestamp,
       low: price * this.stopLossRatio,
     };
+
+    if (this.buyOnly) {
+      this.state = TradeState.SELL;
+      this.onSold(this.tradeInfo.amount, price, Date.now(), 'buyOnly');
+      return;
+    }
 
     this.sellTimeoutId = setTimeout(() => {
       this.info('%o - sell trigger. Reason: timeout', new Date());
