@@ -49,7 +49,11 @@ async function processFile() {
       const [symbol, price, amount] = parseLine(line);
       const lastPrice = lastPrices[symbol];
       if (lastPrice === undefined) {
-        fixedPriceEvents.emit(`${symbol}-fixedPrice-new`, { symbol, price });
+        fixedPriceEvents.emit(`${symbol}-fixedPrice-new`, {
+          symbol,
+          price,
+          amount,
+        });
         log(`New fixed price for ${symbol}: ${price}`);
       } else if (lastPrice[0] !== price || lastPrice[1] !== amount) {
         fixedPriceEvents.emit(`${symbol}-fixedPrice-updated`, {
